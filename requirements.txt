@@ -2,7 +2,7 @@ aiohttp==3.6.2
 altgraph==0.17
 async-timeout==3.0.1
 attrs==20.2.0
-Babel==2.8.0
+Babel==2.9.1
 certifi==2020.6.20
 chardet==3.0.4
 future==0.18.2
