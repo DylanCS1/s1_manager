@@ -8,11 +8,11 @@ On the current release, everything runs on a single thread so when executing a t
 
 
 ## [Click here to download S1 Manager tool](https://github.com/DylanCS1/s1_manager/blob/main/dist/s1_manager.exe)
+---
 
 
 
 ## Login Menu:
----
 
 1. Insert the management console address - Example: Https://abc-corp.sentinelone.net
 2. Enter the API token for the user
@@ -21,7 +21,6 @@ On the current release, everything runs on a single thread so when executing a t
 4. On-prem customers that use self-signed certificate will need to uncheck the **Use SSL** option before clicking **Submit**
 
 ## Features:
----
 
 ### Export Events from Deep Visibility
 
@@ -144,7 +143,6 @@ We want to export all existing exclusions located under our account
 ![](.README_images/8cf66cf4.png)
 
 
----
 
 ## Build EXE
 To build the source as an EXE for use on Windows:
