@@ -1,31 +1,29 @@
-![image_5](dist/s1_manager/tk/images/image_5.png)
+# S1 Manager
 
-
-
-
-S1 Manager is a community project by SentinelOne Administrators and for SentinelOne Administrators
-It is a Python tool with Tkinter GUI based on SentinelOne Management Console API
+S1 Manager is a community project by SentinelOne Administrators and for SentinelOne Administrators. It is a Python tool with Tkinter GUI based on SentinelOne Management Console API
 
 On the current release, everything runs on a single thread so when executing a task the GUI will appear to be "dead" (GUI cannot accept new events). You will just need to be patient :)
 
+![image_5](dist/s1_manager/tk/images/image_5.png)
 
-[CLICK HERE TO DOWNLOAD THE TOOL ](https://github.com/guysentinel/s1_manager/blob/master/dist/s1_manager.exe)
-========================================================================================================
 
-LOGIN MENU:
----------
+## [Click here to download S1 Manager tool](https://github.com/DylanCS1/s1_manager/blob/main/dist/s1_manager.exe)
 
-1. Insert the management console address - Example:
-Https://abc-corp.sentinelone.net
-2. Enter the API token for the user -
-Note: The script will use the user credentials according to the permissions assigned
-3. Add proxy address (if exist) 
-4. On-prem customers that use self-sign certificate will need to uncheck the "Use SSL" option before the "Submit"
 
-Features:
----------
 
-**Export Events from Deep Visibility -**
+## Login Menu:
+---
+
+1. Insert the management console address - Example: Https://abc-corp.sentinelone.net
+2. Enter the API token for the user
+*Note: The permissions assigned to the user associated with the API Token define what actions and scopes can be performed.*
+3. Add proxy address (if needed) 
+4. On-prem customers that use self-signed certificate will need to uncheck the **Use SSL** option before clicking **Submit**
+
+## Features:
+---
+
+### Export Events from Deep Visibility
 
 Ability to export events from Deep Visibility to a CSV based on a Deep Visibility Query ID.
 
@@ -47,12 +45,12 @@ To generate a Deep Visibility query:
 ![image_1](dist/s1_manager/tk/images/image_1.png)
 
 
-**Export and Search Activity Log -**
+### Export and Search Activity Log
 
 Ability to search and export the activity log. Search is not Case Sensitive
 
 
-**Upgrade Agents from CSV -**
+### Upgrade Agents from CSV
 
 Ability to bulk upgrade agents from a named endpoint list in a CSV file.
 
@@ -71,7 +69,8 @@ NOTE:  If you are using Microsoft Excel, make sure the ID cell is formatted as T
 
 ![image_2](dist/s1_manager/tk/images/image_2.png)
 
-**Move Agents between Groups from CSV -**
+
+### Move Agents between Groups from CSV
 
 Usecase:
 1. We have an existing list that shows which endpoint belongs to which group
@@ -94,7 +93,7 @@ Process:
 ![image_4](dist/s1_manager/tk/images/image_4.png)
 
 
-Assign Customer Identifier from CSV -
+### Assign Customer Identifier from CSV
 
 Usecase:
 1. We have a named list of endpoints who share a similar logical trait (i.e they are all Dev Servers)
@@ -113,7 +112,7 @@ Process:
 ![image_2](dist/s1_manager/tk/images/image_2.png)
 
 
-**Decomission Agents from CSV -**
+### Decomission Agents from CSV
 
 Usecase:
 1. We have a named list of endpoints that need to be decomissioned
@@ -128,7 +127,7 @@ Process:
 
 
 
-**Export all Agents to CSV -**
+### Export all Agents to CSV
 
 Usecase:
 
@@ -136,7 +135,7 @@ Usecase:
 2. We have more than 10,000 endpoints
 3. The management console GUI button does not allow to export more than 10,000
 
-**Export Exclusions to CSV -**
+### Export Exclusions to CSV
 
 Usecase:
 
@@ -144,9 +143,13 @@ We want to export all existing exclusions located under our account
 
 ![](.README_images/8cf66cf4.png)
 
-# NOTE: To use pyinstaller to move it to onefile, we need to import the babel.numbers module as well -
-# This will build the script to be in an exe windows 
-If you don't have pyinstaller, install it: "pip install pyinstaller"
-pyinstaller --hidden-import babel.numbers --icon=s1-favicon-big.ico --onefile s1_manager.py
 
+---
+
+## Build EXE
+To build the source as an EXE for use on Windows:
+1. Install dependencies:
+> `pip install -r requirements.txt`
+2. Build EXE:
+> `pyinstaller --hidden-import babel.numbers --icon=s1-favicon-big.ico --onefile --noconsole s1_manager.py`
 
