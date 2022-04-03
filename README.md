@@ -4,66 +4,21 @@
 
 <div align="center">
 
-  [![Contributors][contributors-shield]][contributors-url]
-  [![Issues][issues-shield]][issues-url]
-  [![MIT License][license-shield]][license-url]
+![S1 Manager][product-screenshot]
 
-<p align="center">
-  <a href="https://github.com/othneildrew/Best-README-Template/issues">Report Bug</a>
-  ·
-  <a href="https://github.com/othneildrew/Best-README-Template/issues">Request Feature</a>
-</p>
 </div>
-
-<br />
-
-[![Product Name Screen Shot][product-screenshot]](https://example.com)
 
 The S1 Manager tool is a GUI-based application to assist SentinelOne administrators in performing specific tasks via the v2.1 API. The tool was developed in Python 3 with TKinter.
 
 > This tool requires a SentinelOne Management Console and an API Token for a user with appropriate permissions to run the various API calls. Use of this tool assumes the user has an active license to use the SentinelOne product.
 
-<p align="right">(<a href="#top">back to top</a>)</p>
+<div align="center">
 
+[Report Bug or Request Feature][issues-url]
 
-<!-- TABLE OF CONTENTS -->
-<details>
-  <summary>Table of Contents</summary>
-  <ol>
-    <li>
-      <a href="#about-the-project">About The Project</a>
-    </li>
-    <li>
-      <a href="#getting-started">Getting Started</a>
-      <ul>
-        <li><a href="#download-exe">Download EXE</a></li>
-        <li><a href="#run-from-source">Run From Source</a></li>
-        <li><a href="#build-exe">Build EXE</a></li>
-      </ul>
-    </li>
-    <li><a href="#usage">Usage</a></li>
-      <ul>
-        <li><a href="#login">Login</a></li>
-        <li><a href="#export-dv">Export Deep Visibility Events</a></li>
-        <li><a href="#export-activity-log">Export and Search Activity Log</a></li>
-        <li><a href="#upgrade-from-csv">Upgrade Agents from CSV</a></li>
-        <li><a href="#move-from-csv">Move Agents from CSV</a></li>
-        <li><a href="#assign-customer-id">Assign Customer Identifier from CSV</a></li>
-        <li><a href="#decom-from-csv">Decomission Agents from CSV</a></li>
-        <li><a href="#export-agents-to-csv">Export Agents to CSV</a></li>
-        <li><a href="#export-exclusions-to-csv">Export Exclusions to CSV</a></li>
-      </ul>
-    <li><a href="#roadmap">Roadmap</a></li>
-    <li><a href="#contributing">Contributing</a></li>
-    <li><a href="#license">License</a></li>
-    <li><a href="#acknowledgments">Acknowledgments</a></li>
-  </ol>
-</details>
+</div>
 
-
-
-
-
+<br />
 
 <!-- GETTING STARTED -->
 ## Getting Started
@@ -147,7 +102,6 @@ To generate a Deep Visibility query:
 ---
 
 Search and export the activity log.
-
 > Search is not Case Sensitive
 
 
@@ -296,6 +250,8 @@ A huge thank you to the following individuals for starting the S1 Manager tool p
 - [tomerbsentinel](https://github.com/tomerbsentinel "tomerbsentinel")
 - [RokoS1](https://github.com/RokoS1 "RokoS1")
 
+[Click to see all Contributors][contributors-url]
+
 And to the following resources:
 - [SentinelOne](https://www.sentinelone.com/ "SentinelOne")
 - [Python](https://www.python.org/downloads/ "Python Download")
@@ -308,10 +264,7 @@ And to the following resources:
 
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
-[contributors-shield]: https://img.shields.io/github/contributors/othneildrew/Best-README-Template.svg?style=for-the-badge
+
 [contributors-url]: https://github.com/DylanCS1/s1_manager/graphs/contributors "Contributors"
-[issues-shield]: https://img.shields.io/github/issues/othneildrew/Best-README-Template.svg?style=for-the-badge
 [issues-url]: https://github.com/DylanCS1/s1_manager/issues "Issues"
-[license-shield]: https://img.shields.io/github/license/othneildrew/Best-README-Template.svg?style=for-the-badge
-[license-url]: https://github.com/DylanCS1/s1_manager/blob/master/LICENSE.txt "MIT License"
 [product-screenshot]: dist/s1_manager/tk/images/image_5.png "S1 Manager Screenshot"
