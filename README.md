@@ -22,7 +22,6 @@ The S1 Manager tool is a GUI-based application to assist SentinelOne administrat
 
 <!-- GETTING STARTED -->
 ## Getting Started
----
 
 ### Download EXE
 [https://github.com/DylanCS1/s1_manager/blob/main/dist/s1_manager.exe](https://github.com/DylanCS1/s1_manager/blob/main/dist/s1_manager.exe)
@@ -63,14 +62,12 @@ To get a local copy up and running follow these simple steps:
 
 <!-- USAGE EXAMPLES -->
 ## Usage
----
 
 On the current release, everything runs on a single thread so when executing a task the GUI will appear to be "dead" (GUI cannot accept new events). You will just need to be patient :)  
 
 The permissions assigned to the user associated with the API Token define what actions can be performed, and at what scope.
 
 ### Login:
----
 
 1. Input your SentinelOne Management Console address (e.g., https://abc-corp.sentinelone.net)
 2. Input your user account API Token
@@ -80,7 +77,6 @@ The permissions assigned to the user associated with the API Token define what a
 
 
 ### Export Deep Visibility Events
----
 
 Export events from Deep Visibility to a CSV based on a Deep Visibility Query ID.
 
@@ -99,14 +95,12 @@ To generate a Deep Visibility query:
 
 
 ### Search and Export Activity Log
----
 
 Search and export the activity log.
 > Search is not Case Sensitive
 
 
 ### Upgrade Agents from CSV
----
 
 Bulk upgrade agents from a named endpoint list in a CSV file.
 
@@ -126,7 +120,6 @@ Process:
 
 
 ### Move Agents from CSV
----
 
 Move the agents listed in the CSV to the target site ID and target group ID.
 > If the target group is dynamic the agent will only be moved into the parent site scope.
@@ -147,7 +140,6 @@ Process:
 
 
 ### Assign Customer Identifier from CSV
----
 
 Easily add a Customer Identifier to Agents from a source CSV of endpoint names.
 
@@ -165,7 +157,6 @@ Process:
 
 
 ### Decomission Agents from CSV
----
 
 Decommission SentinelOne agents in bulk using a source CSV of endponit names.
 
@@ -181,14 +172,12 @@ Process:
 
 
 ### Export all Agents to CSV
----
 
 Export the list of Agents in the SentinelOne console.
 > Management consoles prior to the Rio SP1 release have a lower limit on the number of Agents that can be exported to CSV.
 
 
 ### Export Exclusions to CSV
----
 
 Export all exclusions from the Account scope.
 
@@ -199,7 +188,6 @@ Export all exclusions from the Account scope.
 
 <!-- ROADMAP -->
 ## Roadmap
----
 
 - [ ] Add additional features around newer API offerings
 - [ ] Update dependencies
@@ -214,7 +202,6 @@ Export all exclusions from the Account scope.
 
 <!-- CONTRIBUTING -->
 ## Contributing
----
 
 Contributions are greatly appreciated.
 
@@ -232,7 +219,6 @@ Don't forget to give the project a star if you found it useful! Thanks again!
 
 <!-- LICENSE -->
 ## License
----
 
 Distributed under the MIT License. See [LICENSE.txt][license-url] for more information.
 
@@ -243,7 +229,6 @@ SentinelOne and the SentinelOne logomark are &trade; of [SentinelOne](https://ww
 
 <!-- ACKNOWLEDGEMENTS -->
 ## Acknowledgements
----
 
 A huge thank you to the following individuals for starting the S1 Manager tool project:
 - [guysentinel](https://github.com/guysentinel "guysentinel")
