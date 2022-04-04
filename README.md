@@ -252,4 +252,5 @@ And to the following resources:
 
 [contributors-url]: https://github.com/DylanCS1/s1_manager/graphs/contributors "Contributors"
 [issues-url]: https://github.com/DylanCS1/s1_manager/issues "Issues"
+[license-url]: https://github.com/DylanCS1/s1_manager/blob/main/LICENSE.txt "MIT License"
 [product-screenshot]: dist/s1_manager/tk/images/image_5.png "S1 Manager Screenshot"
