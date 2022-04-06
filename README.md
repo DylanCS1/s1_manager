@@ -54,7 +54,7 @@ To get a local copy up and running follow these simple steps:
    ```
 3. Build EXE with pyinstaller
    ```python
-   pyinstaller --hidden-import babel.numbers --onefile --noconsole s1_manager.py
+   pyinstaller --hidden-import=babel.numbers --onefile --noconsole s1_manager.py
    ```
 
 <p align="right">(<a href="#top">back to top</a>)</p>
