@@ -246,7 +246,7 @@ And to the following resources:
 - [Requests](https://docs.python-requests.org/en/latest/ "Python Requests library")
 - [Babel](https://babel.pocoo.org/en/latest/index.html "Python Babel library")
 - [Othneildrew](https://github.com/othneildrew) for the README.md template. 
-- [rdbende Sun-Valley-ttk-theme](https://github.com/rdbende/Sun-Valley-ttk-theme)
+- [rdbende Forest-ttk-theme](https://github.com/rdbende/Forest-ttk-theme)
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
