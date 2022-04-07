@@ -27,11 +27,13 @@ import gui
 # Consts #############################
 __version__ = "2.0.0"
 api_version = "v2.1"
+dir_path = os.path.dirname(os.path.realpath(__file__))
+
 window = tk.Tk()
 window.title("S1 Manager")
 window.minsize(window.winfo_width(), window.winfo_height())
 
-window.tk.call("source", "forest-dark.tcl") # https://github.com/rdbende/Forest-ttk-theme
+window.tk.call("source", os.path.join(dir_path, "forest-dark.tcl")) # https://github.com/rdbende/Forest-ttk-theme
 ttk.Style().theme_use("forest-dark")
 
 loginMenuFrame = tk.Frame()
