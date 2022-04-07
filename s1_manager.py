@@ -1412,14 +1412,12 @@ consoleAddressLabel = tk.Label(
     text="Management Console URL:",
 )
 consoleAddressEntry = ttk.Entry(master=loginMenuFrame, width=80)
-consoleAddressEntry.insert(0, "https://usea1-support3.sentinelone.net") # REMOVE
 
 apikTokenLabel = tk.Label(
     master=loginMenuFrame,
     text="API Token:"
 )
 apikTokenEntry = ttk.Entry(master=loginMenuFrame, width=80)
-apikTokenEntry.insert(0, "V9uAvwzLVLwEFYrSp6VGfrpp7YI7DMp03rowxaND97Fvp3xw3QqCE7T0sJppyuyeaZ0c6Tt6fUoaA16Q") # REMOVE
 
 proxyLabel = tk.Label(
     master=loginMenuFrame,
