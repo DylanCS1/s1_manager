@@ -1,3 +1,9 @@
+""" s1_manager.py 
+    License: MIT license
+    Source: https://github.com/DylanCS1/s1_manager
+
+"""
+
 import asyncio
 import csv
 import datetime
@@ -9,16 +15,25 @@ import tkinter as tk
 import tkinter.filedialog
 import tkinter.scrolledtext as ScrolledText
 from functools import partial
+from tkinter import ttk
 
 import aiohttp
 import requests
-import tkcalendar
+# import tkcalendar
 from xlsxwriter.workbook import Workbook
 
-# Consts
+import gui
+
+# Consts #############################
+__version__ = "2.0.0"
+api_version = "v2.1"
 window = tk.Tk()
 window.title("S1 Manager")
-window.minsize(800, 800)
+window.minsize(window.winfo_width(), window.winfo_height())
+
+window.tk.call("source", "forest-dark.tcl") # https://github.com/rdbende/Forest-ttk-theme
+ttk.Style().theme_use("forest-dark")
+
 loginMenuFrame = tk.Frame()
 mainMenuFrame = tk.Frame()
 exportFromDVFrame = tk.Frame()
@@ -39,8 +54,8 @@ exportExclusionsFrame = tk.Frame()
 
 
 class TextHandler(logging.Handler):
-    # This class allows you to log to a Tkinter Text or ScrolledText widget
-    # Adapted from Moshe Kaplan: https://gist.github.com/moshekaplan/c425f861de7bbf28ef06
+    """This class allows you to log to a Tkinter Text or ScrolledText widget
+    Adapted from Moshe Kaplan: https://gist.github.com/moshekaplan/c425f861de7bbf28ef06"""
 
     def __init__(self, text):
         # run the regular Handler __init__
@@ -68,7 +83,7 @@ def testLogin(hostname, apitoken, proxy):
         "Authorization": "ApiToken " + apitoken,
     }
     r = requests.get(
-        hostname + "/web/api/v2.1/system/info",
+        hostname + f"/web/api/{api_version}/system/info",
         headers=headers,
         proxies={"http": proxy, "https": proxy},
         verify=useSSL.get(),
@@ -81,7 +96,7 @@ def testLogin(hostname, apitoken, proxy):
             "Authorization": "Token " + apitoken,
         }
     r = requests.get(
-        hostname + "/web/api/v2.1/system/info",
+        hostname + f"/web/api/{api_version}/system/info",
         headers=headers,
         proxies={"http": proxy, "https": proxy},
         verify=useSSL.get(),
@@ -129,7 +144,7 @@ def exportFromDV():
     async def dv_query_to_csv(
         querytype, session, hostname, dv_query_id, headers, firstrun, proxy
     ):
-        params = "/web/api/v2.1/dv/events/" + querytype + "?queryId=" + dv_query_id
+        params = f"/web/api/{api_version}/dv/events/{querytype}?queryId={dv_query_id}"
         url = hostname + params
         while url:
             async with session.get(
@@ -137,9 +152,7 @@ def exportFromDV():
             ) as response:
                 if response.status != 200:
                     error = (
-                        "Status: "
-                        + str(response.status)
-                        + " Problem with the request. Exiting."
+                        f"Status: {str(response.status)} Problem with the request. Exiting."
                     )
                     tk.Label(master=exportFromDVFrame, text=error, fg="red").grid(
                         row=6, column=0, pady=2
@@ -282,13 +295,7 @@ def exportFromDV():
                                 f.writerow(tmp)
                     if cursor:
                         paramsnext = (
-                            "/web/api/v2.1/dv/events/"
-                            + querytype
-                            + "?cursor="
-                            + cursor
-                            + "&queryId="
-                            + dv_query_id
-                            + "&limit=100"
+                            f"/web/api/{api_version}/dv/events/{querytype}?cursor={cursor}&queryId={dv_query_id}&limit=100"
                         )
                         url = hostname + paramsnext
                     else:
@@ -384,13 +391,13 @@ def exportFromDV():
             master=exportFromDVFrame,
             text="No DV Query ID found. Please try again",
             fg="red",
-        ).grid(row=5, column=0, pady=2)
+        ).grid(row=6, column=0, pady=2)
 
 
 def exportActivityLog(searchOnly):
-    st = ScrolledText.ScrolledText(master=exportActivityLogFrame, state="disabled")
+    st = ScrolledText.ScrolledText(master=exportActivityLogFrame, state="disabled", height=10)
     st.configure(font="TkFixedFont")
-    st.grid(row=10, column=0, columnspan=3, pady=2)
+    st.grid(row=11, column=0, pady=10)
     text_handler = TextHandler(st)
     logging.basicConfig(
         filename="activitylogexport.log",
@@ -407,7 +414,7 @@ def exportActivityLog(searchOnly):
     if dateFrom.get() and dateTo.get():
         url = (
             hostname.get()
-            + f"/web/api/v2.1/activities?limit=1000&createdAt__between={fromdate_epoch}-{todate_epoch}&countOnly=false&includeHidden=false"
+            + f"/web/api/{api_version}/activities?limit=1000&createdAt__between={fromdate_epoch}-{todate_epoch}&countOnly=false&includeHidden=false"
         )
         if searchOnly:
             while url:
@@ -419,10 +426,7 @@ def exportActivityLog(searchOnly):
                 )
                 if response.status_code != 200:
                     logger.error(
-                        "Status: "
-                        + str(response.status_code)
-                        + " Problem with the request. Details - "
-                        + str(response.text)
+                        f"Status: {str(response.status_code)} Problem with the request. Details - {str(response.text)}"
                     )
                 else:
                     data = response.json()
@@ -435,7 +439,7 @@ def exportActivityLog(searchOnly):
                                 in item["primaryDescription"].upper()
                             ):
                                 logger.info(
-                                    f'{item["createdAt"]} - {item["primaryDescription"]} - {item["secondaryDescription"]}'
+                                    f"{item['createdAt']} - {item['primaryDescription']} - {item['secondaryDescription']}"
                                 )
                             elif item["secondaryDescription"]:
                                 if (
@@ -443,10 +447,10 @@ def exportActivityLog(searchOnly):
                                     in item["secondaryDescription"].upper()
                                 ):
                                     logger.info(
-                                        f'{item["createdAt"]} - {item["primaryDescription"]} - {item["secondaryDescription"]}'
+                                        f"{item['createdAt']} - {item['primaryDescription']} - {item['secondaryDescription']}"
                                     )
                     if cursor:
-                        paramsnext = f"/web/api/v2.1/activities?limit=1000&createdAt__between={fromdate_epoch}-{todate_epoch}&countOnly=false&cursor={cursor}&includeHidden=false"
+                        paramsnext = f"/web/api/{api_version}/activities?limit=1000&createdAt__between={fromdate_epoch}-{todate_epoch}&countOnly=false&cursor={cursor}&includeHidden=false"
                         url = hostname.get() + paramsnext
                     else:
                         url = None
@@ -470,10 +474,7 @@ def exportActivityLog(searchOnly):
                 )
                 if response.status_code != 200:
                     logger.error(
-                        "Status: "
-                        + str(response.status_code)
-                        + " Problem with the request. Details - "
-                        + str(response.text)
+                        f"Status: {str(response.status_code)} Problem with the request. Details - {str(response.text)}"
                     )
                 else:
                     data = response.json()
@@ -492,7 +493,7 @@ def exportActivityLog(searchOnly):
                                 tmp.append(value)
                             f.writerow(tmp)
                     if cursor:
-                        paramsnext = f"/web/api/v2.1/activities?limit=1000&createdAt__between={fromdate_epoch}-{todate_epoch}&countOnly=false&cursor={cursor}&includeHidden=false"
+                        paramsnext = f"/web/api/{api_version}/activities?limit=1000&createdAt__between={fromdate_epoch}-{todate_epoch}&countOnly=false&cursor={cursor}&includeHidden=false"
                         url = hostname.get() + paramsnext
                     else:
                         url = None
@@ -503,9 +504,9 @@ def exportActivityLog(searchOnly):
 
 
 def upgradeFromCSV(justPackages):
-    st = ScrolledText.ScrolledText(master=upgradeFromCSVFrame, state="disabled")
+    st = ScrolledText.ScrolledText(master=upgradeFromCSVFrame, state="disabled", height=10)
     st.configure(font="TkFixedFont")
-    st.grid(row=9, column=0, columnspan=3, pady=2)
+    st.grid(row=11, column=0, pady=10)
     text_handler = TextHandler(st)
     logging.basicConfig(
         filename="upgradefromcsv.log",
@@ -516,7 +517,7 @@ def upgradeFromCSV(justPackages):
     logger.addHandler(text_handler)
 
     if justPackages:
-        params = "/web/api/v2.1/update/agent/packages?sortBy=updatedAt&sortOrder=desc&countOnly=false&limit=1000"
+        params = f"/web/api/{api_version}/update/agent/packages?sortBy=updatedAt&sortOrder=desc&countOnly=false&limit=1000"
         url = hostname.get() + params
         f = csv.writer(open("packages_list.csv", "a+", newline="", encoding="utf-8"))
         f.writerow(
@@ -542,10 +543,7 @@ def upgradeFromCSV(justPackages):
             )
             if response.status_code != 200:
                 logger.error(
-                    "Status: "
-                    + str(response.status_code)
-                    + " Problem with the request. Details - "
-                    + str(response.text)
+                    f"Status: {str(response.status_code)} Problem with the request. Details - {str(response.text)}"
                 )
             else:
                 data = response.json()
@@ -568,9 +566,7 @@ def upgradeFromCSV(justPackages):
                         )
                 if cursor:
                     paramsnext = (
-                        "/web/api/v2.1/update/agent/packages?sortBy=updatedAt&sortOrder=desc&limit=1000&cursor="
-                        + cursor
-                        + "&countOnly=false"
+                        f"/web/api/{api_version}/update/agent/packages?sortBy=updatedAt&sortOrder=desc&limit=1000&cursor={cursor}&countOnly=false"
                     )
                     url = hostname.get() + paramsnext
                 else:
@@ -582,7 +578,7 @@ def upgradeFromCSV(justPackages):
             line_count = 0
             for row in csv_reader:
                 logger.info(f"\t Upgrading endpoint named -  {row[0]}")
-                url = hostname.get() + "/web/api/v2.1/agents/actions/update-software"
+                url = hostname.get() + f"/web/api/{api_version}/agents/actions/update-software"
                 body = {
                     "filter": {"computerName": row[0]},
                     "data": {"packageId": packageIDEntry.get()},
@@ -596,12 +592,7 @@ def upgradeFromCSV(justPackages):
                 )
                 if response.status_code != 200:
                     logger.error(
-                        "Failed to upgrade endpoint "
-                        + row[0]
-                        + " Error code: "
-                        + str(response.status_code)
-                        + " Description: "
-                        + str(response.text)
+                        f"Failed to upgrade endpoint {row[0]} Error code: {str(response.status_code)} Description: {str(response.text)}"
                     )
                 else:
                     data = response.json()
@@ -613,9 +604,9 @@ def upgradeFromCSV(justPackages):
 
 
 def moveAgents(justGroups):
-    st = ScrolledText.ScrolledText(master=moveAgentsFrame, state="disabled")
+    st = ScrolledText.ScrolledText(master=moveAgentsFrame, state="disabled", height=10)
     st.configure(font="TkFixedFont")
-    st.grid(row=7, column=0, columnspan=3, pady=2)
+    st.grid(row=8, column=0, pady=10)
     text_handler = TextHandler(st)
     logging.basicConfig(
         filename="moveagentsfromcsv.log",
@@ -627,7 +618,7 @@ def moveAgents(justGroups):
 
     if justGroups:
         params = (
-            "/web/api/v2.0/groups?isDefault=false&limit=100&type=static&countOnly=false"
+            "/web/api/v2.0/groups?isDefault=false&limit=100&type=static&countOnly=false" #TODO 2.0?
         )
         url = hostname.get() + params
         f = csv.writer(open("group_to_id_map.csv", "a+", newline="", encoding="utf-8"))
@@ -641,10 +632,7 @@ def moveAgents(justGroups):
             )
             if response.status_code != 200:
                 logger.error(
-                    "Status: "
-                    + str(response.status_code)
-                    + " Problem with the request. Details - "
-                    + str(response.text)
+                    f"Status: {str(response.status_code)} Problem with the request. Details - {str(response.text)}"
                 )
             else:
                 data = response.json()
@@ -662,9 +650,7 @@ def moveAgents(justGroups):
                         )
                 if cursor:
                     paramsnext = (
-                        "/web/api/v2.0/groups?isDefault=false&limit=100&type=static&cursor="
-                        + cursor
-                        + "&countOnly=false"
+                        f"/web/api/v2.0/groups?isDefault=false&limit=100&type=static&cursor={cursor}&countOnly=false" #TODO 2.0?
                     )
                     url = hostname.get() + paramsnext
                 else:
@@ -676,7 +662,7 @@ def moveAgents(justGroups):
             line_count = 0
             for row in csv_reader:
                 logger.info(f"\t Moving endpoint name {row[0]} to Site ID {row[2]}")
-                url = hostname.get() + "/web/api/v2.1/agents/actions/move-to-site"
+                url = hostname.get() + f"/web/api/{api_version}/agents/actions/move-to-site"
                 body = {
                     "filter": {"computerName": row[0]},
                     "data": {"targetSiteId": row[2]},
@@ -690,20 +676,13 @@ def moveAgents(justGroups):
                 )
                 if response.status_code != 200:
                     logger.error(
-                        "Failed to transfer endpoint "
-                        + row[0]
-                        + " to site "
-                        + row[1]
-                        + " Error code: "
-                        + str(response.status_code)
-                        + " Description: "
-                        + str(response.text)
+                        f"Failed to transfer endpoint {row[0]} to site {row[1]} Error code: {str(response.status_code)} Description: {str(response.text)}"
                     )
                 else:
                     data = response.json()
                     logger.info(f'Moved {data["data"]["affected"]} endpoints')
                 logger.info(f"\t Moving endpoint name {row[0]} to Group ID {row[1]}")
-                url = hostname.get() + "/web/api/v2.1/groups/" + row[1] + "/move-agents"
+                url = hostname.get() + f"/web/api/{api_version}/groups/" + row[1] + "/move-agents"
                 body = {"filter": {"computerName": row[0]}}
                 response = requests.put(
                     url,
@@ -714,14 +693,7 @@ def moveAgents(justGroups):
                 )
                 if response.status_code != 200:
                     logger.error(
-                        "Failed to transfer endpoint "
-                        + row[0]
-                        + " to group "
-                        + row[1]
-                        + " Error code: "
-                        + str(response.status_code)
-                        + " Description: "
-                        + str(response.text)
+                        f"Failed to transfer endpoint {row[0]} to group {row[1]} Error code: {str(response.status_code)} Description: {str(response.text)}"
                     )
                 else:
                     data = response.json()
@@ -732,10 +704,10 @@ def moveAgents(justGroups):
 
 def assignCustomerIdentifier():
     st = ScrolledText.ScrolledText(
-        master=assignCustomerIdentifierFrame, state="disabled"
+        master=assignCustomerIdentifierFrame, state="disabled", height=10
     )
     st.configure(font="TkFixedFont")
-    st.grid(row=8, column=0, columnspan=3, pady=2)
+    st.grid(row=9, column=0, pady=10)
     text_handler = TextHandler(st)
     logging.basicConfig(
         filename="upgradefromcsv.log",
@@ -750,7 +722,7 @@ def assignCustomerIdentifier():
         line_count = 0
         for row in csv_reader:
             logger.info(f"\t Updating customer identifier for endpoint -  {row[0]}")
-            url = hostname.get() + "/web/api/v2.1/agents/actions/set-external-id"
+            url = hostname.get() + f"/web/api/{api_version}/agents/actions/set-external-id"
             body = {
                 "filter": {"computerName": row[0]},
                 "data": {"externalId": customerIdentifierEntry.get()},
@@ -764,12 +736,7 @@ def assignCustomerIdentifier():
             )
             if response.status_code != 200:
                 logger.error(
-                    "Failed to update customer identifier for endpoint "
-                    + row[0]
-                    + " Error code: "
-                    + str(response.status_code)
-                    + " Description: "
-                    + str(response.text)
+                    f"Failed to update customer identifier for endpoint {row[0]} Error code: {str(response.status_code)} Description: {str(response.text)}"
                 )
             else:
                 r = response.json()
@@ -787,9 +754,9 @@ def assignCustomerIdentifier():
 
 
 def exportAllAgents():
-    st = ScrolledText.ScrolledText(master=exportAllAgentsFrame, state="disabled")
+    st = ScrolledText.ScrolledText(master=exportAllAgentsFrame, state="disabled", height=10)
     st.configure(font="TkFixedFont")
-    st.grid(row=3, column=0, columnspan=3, pady=2)
+    st.grid(row=3, column=0, pady=10)
     text_handler = TextHandler(st)
     logging.basicConfig(
         filename="exportallagentstocsv.log",
@@ -804,7 +771,7 @@ def exportAllAgents():
         open(f"endpointsexport_{timestamp}.csv", "a+", newline="", encoding="utf-8")
     )
     firstrun = True
-    url = hostname.get() + "/web/api/v2.1/agents?limit=100"
+    url = hostname.get() + f"/web/api/{api_version}/agents?limit=100"
     while url:
         response = requests.get(
             url,
@@ -814,10 +781,7 @@ def exportAllAgents():
         )
         if response.status_code != 200:
             logger.error(
-                "Status: "
-                + str(response.status_code)
-                + " Problem with the request. Details - "
-                + str(response.text)
+                f"Status: {str(response.status_code)} Problem with the request. Details - {str(response.text)}"
             )
         else:
             data = response.json()
@@ -836,7 +800,7 @@ def exportAllAgents():
                         tmp.append(value)
                     f.writerow(tmp)
             if cursor:
-                paramsnext = f"/web/api/v2.1/agents?limit=100&cursor={cursor}"
+                paramsnext = f"/web/api/{api_version}/agents?limit=100&cursor={cursor}"
                 url = hostname.get() + paramsnext
             else:
                 url = None
@@ -844,9 +808,9 @@ def exportAllAgents():
 
 
 def decomissionAgents():
-    st = ScrolledText.ScrolledText(master=decomissionAgentsFrame, state="disabled")
+    st = ScrolledText.ScrolledText(master=decomissionAgentsFrame, state="disabled", height=10)
     st.configure(font="TkFixedFont")
-    st.grid(row=6, column=0, columnspan=3, pady=2)
+    st.grid(row=6, column=0, pady=10)
     text_handler = TextHandler(st)
     logging.basicConfig(
         filename="decomissionagentfromcsv.log",
@@ -864,7 +828,7 @@ def decomissionAgents():
             logger.info(f"Getting endpoint ID for {row[0]}")
             url = (
                 hostname.get()
-                + f"/web/api/v2.1/agents?countOnly=false&computerName={row[0]}&limit=1000"
+                + f"/web/api/{api_version}/agents?countOnly=false&computerName={row[0]}&limit=1000"
             )
             response = requests.get(
                 url,
@@ -874,12 +838,7 @@ def decomissionAgents():
             )
             if response.status_code != 200:
                 logger.error(
-                    "Failed to get ID for endpoint "
-                    + row[0]
-                    + " Error code: "
-                    + str(response.status_code)
-                    + " Description: "
-                    + str(response.text)
+                    f"Failed to get ID for endpoint {row[0]} Error code: {str(response.status_code)} Description: {str(response.text)}"
                 )
             else:
                 r = response.json()
@@ -896,7 +855,7 @@ def decomissionAgents():
                         logger.info(
                             f"Found ID {item['id']}! adding it for decomissining"
                         )
-                    url = hostname.get() + "/web/api/v2.1/agents/actions/decommission"
+                    url = hostname.get() + f"/web/api/{api_version}/agents/actions/decommission"
                     body = {"filter": {"ids": uuidslist}}
                     response = requests.post(
                         url,
@@ -907,12 +866,7 @@ def decomissionAgents():
                     )
                     if response.status_code != 200:
                         logger.error(
-                            "Failed to decomission endpoint "
-                            + row[0]
-                            + " Error code: "
-                            + str(response.status_code)
-                            + " Description: "
-                            + str(response.text)
+                            f"Failed to decomission endpoint {row[0]} Error code: {str(response.status_code)} Description: {str(response.text)}"
                         )
                     else:
                         r = response.json()
@@ -930,9 +884,9 @@ def decomissionAgents():
 
 
 def exportExclusions():
-    st = ScrolledText.ScrolledText(master=exportExclusionsFrame, state="disabled")
+    st = ScrolledText.ScrolledText(master=exportExclusionsFrame, state="disabled", height=10)
     st.configure(font="TkFixedFont")
-    st.grid(row=3, column=0, columnspan=3, pady=2)
+    st.grid(row=3, column=0, pady=10)
     text_handler = TextHandler(st)
     logging.basicConfig(
         filename="exportExclusions.log",
@@ -944,16 +898,14 @@ def exportExclusions():
 
     async def getAccounts(session):
         params = (
-            "/web/api/" + APIv + "/accounts?limit=100" + "&countOnly=false&tenant=true"
+            f"/web/api/{api_version}/accounts?limit=100" + "&countOnly=false&tenant=true"
         )
         url = hostname.get() + params
         while url:
             async with session.get(url, headers=headers, proxy=proxy.get()) as response:
                 if response.status != 200:
                     logger.error(
-                        "Status: "
-                        + str(response.status)
-                        + " Problem with the request. Exiting."
+                        f"Status: {str(response.status)} Problem with the request. Exiting."
                     )
                 else:
                     data = await (response.json())
@@ -965,12 +917,7 @@ def exportExclusions():
                             dictAccounts[account["id"]] = account["name"]
                     if cursor:
                         paramsnext = (
-                            "/web/api/"
-                            + APIv
-                            + "/accounts?limit=100"
-                            + "&cursor="
-                            + cursor
-                            + "&countOnly=false&tenant=true"
+                            f"/web/api/{api_version}/accounts?limit=100&cursor={cursor}&countOnly=false&tenant=true"
                         )
                         url = hostname.get() + paramsnext
                     else:
@@ -978,16 +925,14 @@ def exportExclusions():
 
     async def getSites(session):
         params = (
-            "/web/api/" + APIv + "/sites?limit=100" + "&countOnly=false&tenant=true"
+            f"/web/api/{api_version}/sites?limit=100&countOnly=false&tenant=true"
         )
         url = hostname.get() + params
         while url:
             async with session.get(url, headers=headers, proxy=proxy.get()) as response:
                 if response.status != 200:
                     logger.error(
-                        "Status: "
-                        + str(response.status)
-                        + " Problem with the request. Exiting."
+                        f"Status: {str(response.status)} Problem with the request. Exiting."
                     )
                 else:
                     data = await (response.json())
@@ -999,12 +944,7 @@ def exportExclusions():
                             dictSites[site["id"]] = site["name"]
                     if cursor:
                         paramsnext = (
-                            "/web/api/"
-                            + APIv
-                            + "/sites?limit=100"
-                            + "&cursor="
-                            + cursor
-                            + "&countOnly=false&tenant=true"
+                            f"/web/api/{api_version}/sites?limit=100&cursor={cursor}&countOnly=false&tenant=true"
                         )
                         url = hostname.get() + paramsnext
                     else:
@@ -1012,16 +952,14 @@ def exportExclusions():
 
     async def getGroups(session):
         params = (
-            "/web/api/" + APIv + "/groups?limit=100" + "&countOnly=false&tenant=true"
+            f"/web/api/{api_version}/groups?limit=100&countOnly=false&tenant=true"
         )
         url = hostname.get() + params
         while url:
             async with session.get(url, headers=headers, proxy=proxy.get()) as response:
                 if response.status != 200:
                     logger.error(
-                        "Status: "
-                        + str(response.status)
-                        + " Problem with the request. Exiting."
+                        f"Status: {str(response.status)} Problem with the request. Exiting."
                     )
                 else:
                     data = await (response.json())
@@ -1033,12 +971,7 @@ def exportExclusions():
                             dictGroups[group["id"]] = group["name"]
                     if cursor:
                         paramsnext = (
-                            "/web/api/"
-                            + APIv
-                            + "/groups?limit=100"
-                            + "&cursor="
-                            + cursor
-                            + "&countOnly=false&tenant=true"
+                            f"/web/api/{api_version}/groups?limit=100&cursor={cursor}&countOnly=false&tenant=true"
                         )
                         url = hostname.get() + paramsnext
                     else:
@@ -1052,20 +985,14 @@ def exportExclusions():
         firstrunhash = True
 
         params = (
-            "/web/api/"
-            + APIv
-            + "/exclusions?limit=1000&type="
-            + querytype
-            + "&countOnly=false"
+            f"/web/api/{api_version}/exclusions?limit=1000&type={querytype}&countOnly=false"
         )
         url = hostname.get() + params + exparam
         while url:
             async with session.get(url, headers=headers, proxy=proxy.get()) as response:
                 if response.status != 200:
                     logger.error(
-                        "Status: "
-                        + str(response.status)
-                        + " Problem with the request. Exiting."
+                        f"Status: {str(response.status)} Problem with the request. Exiting."
                     )
                     logger.error("Details of above: " + url)
                 else:
@@ -1186,13 +1113,7 @@ def exportExclusions():
 
                     if cursor:
                         paramsnext = (
-                            "/web/api/"
-                            + APIv
-                            + "/exclusions?limit=1000&type="
-                            + querytype
-                            + "&countOnly=false"
-                            + "&cursor="
-                            + cursor
+                            f"/web/api/{api_version}/exclusions?limit=1000&type={querytype}&countOnly=false&cursor={cursor}"
                         )
                         url = hostname.get() + paramsnext + exparam
                     else:
@@ -1398,7 +1319,7 @@ def exportExclusions():
 
     def getScope():
         r = requests.get(
-            hostname.get() + "/web/api/v2.1/user",
+            hostname.get() + f"/web/api/{api_version}/user",
             headers=headers,
             proxies={"http": proxy},
         )
@@ -1407,13 +1328,8 @@ def exportExclusions():
             return data["data"]["scope"]
         else:
             logger.error(
-                "Status: "
-                + str(r.status_code)
-                + " Problem with the request. Details "
-                + str(r.text)
+                f"Status: {str(r.status_code)} Problem with the request. Details {str(r.text)}"
             )
-
-    APIv = "v2.1"
 
     dictAccounts = {}
     dictSites = {}
@@ -1421,7 +1337,7 @@ def exportExclusions():
     tokenscope = getScope()
 
     if tokenscope != "site":
-        logger.info("Getting account/site/group structure for " + hostname.get())
+        logger.info(f"Getting account/site/group structure for {hostname.get()}")
         loop = asyncio.get_event_loop()
         loop.run_until_complete(runAccounts())
 
@@ -1432,14 +1348,7 @@ def exportExclusions():
     loop.run_until_complete(runGroups())
     logger.info("Finished getting account/site/group structure!")
     logger.info(
-        "Accounts found: "
-        + str(len(dictAccounts))
-        + " | "
-        + "Sites found: "
-        + str(len(dictSites))
-        + " | "
-        + "Groups found: "
-        + str(len(dictGroups))
+        f"Accounts found: {str(len(dictAccounts))} | Sites found: {str(len(dictSites))} | Groups found: {str(len(dictGroups))}"
     )
 
     if tokenscope == "global":
@@ -1486,7 +1395,7 @@ def exportExclusions():
         if os.path.exists(csvfile):
             os.remove(csvfile)
     workbook.close()
-    logger.info("Done! Created the file " + filename + ".xlsx")
+    logger.info(f"Done! Created the file {filename}.xlsx")
 
 
 def selectCSVFile():
@@ -1494,372 +1403,372 @@ def selectCSVFile():
     inputcsv.set(file)
 
 
-# Login Menu Frame
+# Login Menu Frame #############################
+tk.Label(master=loginMenuFrame, text=gui.logo, font="TkFixedFont", fg=gui.logo_color).grid(
+    row=0, column=0, columnspan=1, pady=20, padx=20
+)
 consoleAddressLabel = tk.Label(
     master=loginMenuFrame,
-    text="Insert the full URL of the management console i.e https://abc-corp.sentinelone.net",
+    text="Management Console URL:",
 )
-consoleAddressEntry = tk.Entry(master=loginMenuFrame, width=80)
+consoleAddressEntry = ttk.Entry(master=loginMenuFrame, width=80)
+consoleAddressEntry.insert(0, "https://usea1-support3.sentinelone.net") # REMOVE
+
 apikTokenLabel = tk.Label(
     master=loginMenuFrame,
-    text="Insert your Token / API Token. See the API Documentation for more information on how to generate it",
+    text="API Token:"
 )
-apikTokenEntry = tk.Entry(master=loginMenuFrame, width=80)
+apikTokenEntry = ttk.Entry(master=loginMenuFrame, width=80)
+apikTokenEntry.insert(0, "V9uAvwzLVLwEFYrSp6VGfrpp7YI7DMp03rowxaND97Fvp3xw3QqCE7T0sJppyuyeaZ0c6Tt6fUoaA16Q") # REMOVE
+
 proxyLabel = tk.Label(
     master=loginMenuFrame,
-    text="Insert Proxy details i.e http://username:password@proxy.com - If not used, keep Blank",
+    text="Proxy (if required):",
 )
-proxyEntry = tk.Entry(master=loginMenuFrame, width=80)
-submitButton = tk.Button(
-    master=loginMenuFrame, text="Submit", font=("Courier", 22), command=login
+proxyEntry = ttk.Entry(master=loginMenuFrame, width=80)
+useSSLSwitch = ttk.Checkbutton(master=loginMenuFrame, text="Use SSL", style="Switch", variable=useSSL, onvalue=True, offvalue=False)
+loginButton = ttk.Button(
+    master=loginMenuFrame, text="Login", command=login
 )
-tk.Label(master=loginMenuFrame, text="Login", font=("Courier", 44)).grid(
-    row=0, column=0, columnspan=2, pady=20
+tk.Label(master=loginMenuFrame, text="API: {}".format(api_version), font=("Courier", 12)).grid(
+    row=9, column=0, pady=10
 )
 consoleAddressLabel.grid(row=1, column=0, pady=2)
 consoleAddressEntry.grid(row=2, column=0, pady=2)
-apikTokenLabel.grid(row=3, column=0, pady=2)
+apikTokenLabel.grid(row=3, column=0, pady=(10,2))
 apikTokenEntry.grid(row=4, column=0, pady=2)
-proxyLabel.grid(row=5, column=0, pady=2)
+proxyLabel.grid(row=5, column=0, pady=(10,2))
 proxyEntry.grid(row=6, column=0, pady=2)
-submitButton.grid(row=7, column=0, columnspan=2, pady=10)
-useSSLButton = tk.Checkbutton(
-    master=loginMenuFrame, text="Use SSL", variable=useSSL, onvalue=True, offvalue=False
-)
-useSSLButton.grid(row=8, column=0, pady=2)
+useSSLSwitch.grid(row=7, column=0, pady=10)
+loginButton.grid(row=8, column=0, columnspan=2, pady=10)
 loginMenuFrame.pack()
 
-# Main Menu Frame
-logo = r"""
- ▄▄▄▄▄▄▄▄▄▄▄     ▄▄▄▄           ▄▄       ▄▄  ▄▄▄▄▄▄▄▄▄▄▄  ▄▄        ▄  ▄▄▄▄▄▄▄▄▄▄▄  ▄▄▄▄▄▄▄▄▄▄▄  ▄▄▄▄▄▄▄▄▄▄▄  ▄▄▄▄▄▄▄▄▄▄▄ 
-▐░░░░░░░░░░░▌  ▄█░░░░▌         ▐░░▌     ▐░░▌▐░░░░░░░░░░░▌▐░░▌      ▐░▌▐░░░░░░░░░░░▌▐░░░░░░░░░░░▌▐░░░░░░░░░░░▌▐░░░░░░░░░░░▌
-▐░█▀▀▀▀▀▀▀▀▀  ▐░░▌▐░░▌         ▐░▌░▌   ▐░▐░▌▐░█▀▀▀▀▀▀▀█░▌▐░▌░▌     ▐░▌▐░█▀▀▀▀▀▀▀█░▌▐░█▀▀▀▀▀▀▀▀▀ ▐░█▀▀▀▀▀▀▀▀▀ ▐░█▀▀▀▀▀▀▀█░▌
-▐░▌            ▀▀ ▐░░▌         ▐░▌▐░▌ ▐░▌▐░▌▐░▌       ▐░▌▐░▌▐░▌    ▐░▌▐░▌       ▐░▌▐░▌          ▐░▌          ▐░▌       ▐░▌
-▐░█▄▄▄▄▄▄▄▄▄      ▐░░▌         ▐░▌ ▐░▐░▌ ▐░▌▐░█▄▄▄▄▄▄▄█░▌▐░▌ ▐░▌   ▐░▌▐░█▄▄▄▄▄▄▄█░▌▐░▌ ▄▄▄▄▄▄▄▄ ▐░█▄▄▄▄▄▄▄▄▄ ▐░█▄▄▄▄▄▄▄█░▌
-▐░░░░░░░░░░░▌     ▐░░▌         ▐░▌  ▐░▌  ▐░▌▐░░░░░░░░░░░▌▐░▌  ▐░▌  ▐░▌▐░░░░░░░░░░░▌▐░▌▐░░░░░░░░▌▐░░░░░░░░░░░▌▐░░░░░░░░░░░▌
- ▀▀▀▀▀▀▀▀▀█░▌     ▐░░▌         ▐░▌   ▀   ▐░▌▐░█▀▀▀▀▀▀▀█░▌▐░▌   ▐░▌ ▐░▌▐░█▀▀▀▀▀▀▀█░▌▐░▌ ▀▀▀▀▀▀█░▌▐░█▀▀▀▀▀▀▀▀▀ ▐░█▀▀▀▀█░█▀▀ 
-          ▐░▌     ▐░░▌         ▐░▌       ▐░▌▐░▌       ▐░▌▐░▌    ▐░▌▐░▌▐░▌       ▐░▌▐░▌       ▐░▌▐░▌          ▐░▌     ▐░▌  
- ▄▄▄▄▄▄▄▄▄█░▌ ▄▄▄▄█░░█▄▄▄      ▐░▌       ▐░▌▐░▌       ▐░▌▐░▌     ▐░▐░▌▐░▌       ▐░▌▐░█▄▄▄▄▄▄▄█░▌▐░█▄▄▄▄▄▄▄▄▄ ▐░▌      ▐░▌ 
-▐░░░░░░░░░░░▌▐░░░░░░░░░░░▌     ▐░▌       ▐░▌▐░▌       ▐░▌▐░▌      ▐░░▌▐░▌       ▐░▌▐░░░░░░░░░░░▌▐░░░░░░░░░░░▌▐░▌       ▐░▌
- ▀▀▀▀▀▀▀▀▀▀▀  ▀▀▀▀▀▀▀▀▀▀▀       ▀         ▀  ▀         ▀  ▀        ▀▀  ▀         ▀  ▀▀▀▀▀▀▀▀▀▀▀  ▀▀▀▀▀▀▀▀▀▀▀  ▀         ▀ """
-tk.Label(master=mainMenuFrame, text=logo, justify=tk.LEFT, font="TkFixedFont").grid(
-    row=0, column=0, columnspan=3, pady=20
-)
-tk.Button(
+# Main Menu Frame #############################
+ttk.Button(
     master=mainMenuFrame,
-    text="Export events from Deep Visiblity",
+    text="Export Deep Visiblity Events",
     command=partial(switchFrames, exportFromDVFrame),
-).grid(row=1, column=0, pady=10)
-tk.Button(
+).grid(row=1, column=0, pady=10, padx=10)
+ttk.Button(
     master=mainMenuFrame,
     text="Export and Search Activity Log",
     command=partial(switchFrames, exportActivityLogFrame),
-).grid(row=1, column=1, pady=10)
-tk.Button(
+).grid(row=1, column=1, pady=10, padx=10)
+ttk.Button(
     master=mainMenuFrame,
-    text="Upgrade Agents from CSV",
+    text="Upgrade Agents",
     command=partial(switchFrames, upgradeFromCSVFrame),
-).grid(row=1, column=2, pady=10)
-tk.Button(
+).grid(row=2, column=0, pady=10, padx=10)
+ttk.Button(
     master=mainMenuFrame,
-    text="Move Agents between Groups from CSV",
+    text="Move Agents",
     command=partial(switchFrames, moveAgentsFrame),
-).grid(row=2, column=0, pady=10)
-tk.Button(
+).grid(row=2, column=1, pady=10, padx=10)
+ttk.Button(
     master=mainMenuFrame,
-    text="Assign Customer Identifier from CSV",
+    text="Assign Customer Identifier",
     command=partial(switchFrames, assignCustomerIdentifierFrame),
-).grid(row=2, column=1, pady=10)
-tk.Button(
+).grid(row=3, column=0, pady=10, padx=10)
+ttk.Button(
     master=mainMenuFrame,
-    text="Decomission Agents from CSV",
+    text="Decomission Agents",
     command=partial(switchFrames, decomissionAgentsFrame),
-).grid(row=2, column=2, pady=10)
-tk.Button(
+).grid(row=3, column=1, pady=10, padx=10)
+ttk.Button(
     master=mainMenuFrame,
-    text="Export All Endpoints to CSV",
+    text="Export All Endpoints",
     command=partial(switchFrames, exportAllAgentsFrame),
-).grid(row=3, column=0, pady=10)
-tk.Label(master=mainMenuFrame, text="Version: Kauai", font=("Courier", 10)).grid(
-    row=4, column=1, pady=10
-)
-
-tk.Button(
+).grid(row=4, column=0, pady=10, padx=10)
+ttk.Button(
     master=mainMenuFrame,
     text="Export Exclusions",
     command=partial(switchFrames, exportExclusionsFrame),
-).grid(row=3, column=2, pady=10)
-
-# Export from DV Frame
+).grid(row=4, column=1, pady=10, padx=10)
 tk.Label(
-    master=exportFromDVFrame,
-    text="Export Deep Visiblity Events to CSV",
-    font=("Courier", 44),
-).grid(row=0, column=0, columnspan=2, pady=20)
-tk.Label(
-    master=exportFromDVFrame,
-    text="""Insert Deep Visibility Query ID (i.e stream6a...123)
-                  This could be done by pressing the F12 button in Chrome (will open the Dev-Tools), and searching for the queryid=
-                  If you have more than 20K results, you can concat several smaller queries separated by comma (i.e stream9a...123,stream2b...129,stream8s...145)
-                  For more info: https://github.com/guysentinel/s1_manager/blob/master/README.md""",
+    master=mainMenuFrame,
+    text="Note: Many of the processes can take a while to run. Be patient.",
     font=("Courier", 10),
-).grid(row=1, column=0, pady=2)
-queryIdEntry = tk.Entry(master=exportFromDVFrame, width=80)
-queryIdEntry.grid(row=2, column=0, pady=2)
-tk.Button(
+).grid(row=5, column=0, columnspan=2, padx=20, pady=(20,10))
+
+# Export from DV Frame #############################
+tk.Label(
     master=exportFromDVFrame,
-    text="Submit (this might take awhile)",
-    font=("Courier", 22),
+    text="Export Deep Visiblity Events",
+    font=("Courier", 24),
+).grid(row=0, column=0, padx=20, pady=20)
+tk.Label(
+    master=exportFromDVFrame,
+    text="Export Deep Visibility events to a CSV by query ID as reference",
+    font=("Courier", 12),
+).grid(row=1, column=0, padx=20, pady=10)
+tk.Label(
+    master=exportFromDVFrame,
+    text="1. Input Deep Visibility Query ID",
+    font=("Courier", 12),
+).grid(row=2, column=0, pady=2)
+queryIdEntry = ttk.Entry(master=exportFromDVFrame, width=80)
+queryIdEntry.grid(row=3, column=0, pady=10)
+ttk.Button(
+    master=exportFromDVFrame,
+    text="Export",
     command=exportFromDV,
-).grid(row=3, column=0, pady=2)
-tk.Button(
+).grid(row=4, column=0, pady=10)
+ttk.Button(
     master=exportFromDVFrame,
     text="Back to Main Menu",
-    font=("Courier", 22),
     command=goBacktoMainPage,
-).grid(row=4, column=0, pady=2)
+).grid(row=5, column=0, ipadx=10, pady=10)
 
-# Upgrade from CSV Frame
-tk.Label(
-    master=upgradeFromCSVFrame,
-    text="Upgrade Agents from CSV en masse",
-    font=("Courier", 44),
-).grid(row=0, column=0, columnspan=2, pady=20)
-tk.Button(
-    master=upgradeFromCSVFrame,
-    text="Export Packages List (to get the relevant Package ID)",
-    font=("Courier", 15),
-    command=partial(upgradeFromCSV, True),
-).grid(row=1, column=0, pady=2)
-tk.Label(
-    master=upgradeFromCSVFrame, text="Insert the Package ID", font=("Courier", 12)
-).grid(row=2, column=0, pady=2)
-packageIDEntry = tk.Entry(master=upgradeFromCSVFrame, width=80)
-packageIDEntry.grid(row=3, column=0, pady=2)
-tk.Label(
-    master=upgradeFromCSVFrame,
-    text="Select a CSV file containing a single column with a named list of endpoints to upgrade",
-    font=("Courier", 12),
-).grid(row=4, column=0, pady=2)
-tk.Button(
-    master=upgradeFromCSVFrame,
-    text="Browse",
-    font=("Courier", 15),
-    command=selectCSVFile,
-).grid(row=5, column=0, pady=2)
-tk.Label(master=upgradeFromCSVFrame, textvariable=inputcsv).grid(
-    row=6, column=0, pady=2
-)
-tk.Button(
-    master=upgradeFromCSVFrame,
-    text="Submit (this might take awhile)",
-    font=("Courier", 22),
-    command=partial(upgradeFromCSV, False),
-).grid(row=7, column=0, pady=2)
-tk.Button(
-    master=upgradeFromCSVFrame,
-    text="Back to Main Menu",
-    font=("Courier", 22),
-    command=goBacktoMainPage,
-).grid(row=8, column=0, pady=2)
 
-# Move agents between groups from CSV Frame
-tk.Label(
-    master=moveAgentsFrame,
-    text="Move Agents between Groups from CSV",
-    font=("Courier", 44),
-).grid(row=0, column=0, columnspan=2, pady=20)
-tk.Button(
-    master=moveAgentsFrame,
-    text="Export Groups List (to get the relevant Group ID)",
-    font=("Courier", 15),
-    command=partial(moveAgents, True),
-).grid(row=1, column=0, pady=2)
-tk.Label(
-    master=moveAgentsFrame,
-    text="Select a CSV file containing three columns - endpoints names, target group IDs, target site IDs",
-    font=("Courier", 12),
-).grid(row=2, column=0, pady=2)
-tk.Button(
-    master=moveAgentsFrame, text="Browse", font=("Courier", 15), command=selectCSVFile
-).grid(row=3, column=0, pady=2)
-tk.Label(master=moveAgentsFrame, textvariable=inputcsv).grid(row=4, column=0, pady=2)
-tk.Button(
-    master=moveAgentsFrame,
-    text="Submit (this might take awhile)",
-    font=("Courier", 22),
-    command=partial(moveAgents, False),
-).grid(row=5, column=0, pady=2)
-tk.Button(
-    master=moveAgentsFrame,
-    text="Back to Main Menu",
-    font=("Courier", 22),
-    command=goBacktoMainPage,
-).grid(row=6, column=0, pady=2)
-
-# Assign Customer Identifier from CSV Frame
-tk.Label(
-    master=assignCustomerIdentifierFrame,
-    text="Assign Customer Identifier from CSV",
-    font=("Courier", 44),
-).grid(row=0, column=0, columnspan=2, pady=20)
-tk.Label(
-    master=assignCustomerIdentifierFrame,
-    text="Insert the Customer Identifier",
-    font=("Courier", 12),
-).grid(row=1, column=0, pady=2)
-customerIdentifierEntry = tk.Entry(master=assignCustomerIdentifierFrame, width=80)
-customerIdentifierEntry.grid(row=2, column=0, pady=2)
-tk.Label(
-    master=assignCustomerIdentifierFrame,
-    text="Select a CSV file containing a single column with endpoint names",
-    font=("Courier", 12),
-).grid(row=3, column=0, pady=2)
-tk.Button(
-    master=assignCustomerIdentifierFrame,
-    text="Browse",
-    font=("Courier", 15),
-    command=selectCSVFile,
-).grid(row=4, column=0, pady=2)
-tk.Label(master=assignCustomerIdentifierFrame, textvariable=inputcsv).grid(
-    row=5, column=0, pady=2
-)
-tk.Button(
-    master=assignCustomerIdentifierFrame,
-    text="Submit (this might take awhile)",
-    font=("Courier", 22),
-    command=assignCustomerIdentifier,
-).grid(row=6, column=0, pady=2)
-tk.Button(
-    master=assignCustomerIdentifierFrame,
-    text="Back to Main Menu",
-    font=("Courier", 22),
-    command=goBacktoMainPage,
-).grid(row=7, column=0, pady=2)
-
-# Decomission Agents from CSV Frame
-tk.Label(
-    master=decomissionAgentsFrame,
-    text="Decomission Agents from CSV",
-    font=("Courier", 44),
-).grid(row=0, column=0, columnspan=2, pady=20)
-tk.Label(
-    master=decomissionAgentsFrame,
-    text="Select a CSV file containing a single column of endpoint names to be decomissioned",
-    font=("Courier", 12),
-).grid(row=1, column=0, pady=2)
-tk.Button(
-    master=decomissionAgentsFrame,
-    text="Browse",
-    font=("Courier", 15),
-    command=selectCSVFile,
-).grid(row=2, column=0, pady=2)
-tk.Label(master=decomissionAgentsFrame, textvariable=inputcsv).grid(
-    row=3, column=0, pady=2
-)
-tk.Button(
-    master=decomissionAgentsFrame,
-    text="Submit (this might take awhile)",
-    font=("Courier", 22),
-    command=decomissionAgents,
-).grid(row=4, column=0, pady=2)
-tk.Button(
-    master=decomissionAgentsFrame,
-    text="Back to Main Menu",
-    font=("Courier", 22),
-    command=goBacktoMainPage,
-).grid(row=5, column=0, pady=2)
-
-# Export and Search Activity Log Frame
+# Export and Search Activity Log Frame #############################
 tk.Label(
     master=exportActivityLogFrame,
     text="Export and Search Activity Log",
-    font=("Courier", 44),
-).grid(row=0, column=0, columnspan=2, pady=20)
-tk.Label(master=exportActivityLogFrame, text="Choose a FROM date").grid(
-    row=1, column=0, pady=2
+    font=("Courier", 30),
+).grid(row=0, column=0, padx=20, pady=20)
+tk.Label(master=exportActivityLogFrame, text="Search Management Console Activity log and export results.").grid(
+    row=1, column=0, padx=20, pady=10
 )
-dateFrom = tkcalendar.DateEntry(
-    master=exportActivityLogFrame,
-    width=12,
-    background="darkblue",
-    foreground="white",
-    borderwidth=2,
-    date_pattern="yyyy-MM-dd",
+tk.Label(master=exportActivityLogFrame, text="1. Input FROM date (yyyy-MM-dd)").grid(
+    row=2, column=0, pady=2
 )
-dateFrom.grid(row=2, column=0, pady=2)
-tk.Label(master=exportActivityLogFrame, text="Choose a TO date").grid(
-    row=3, column=0, pady=2
+dateFrom = fromDateEntry = ttk.Entry(master=exportActivityLogFrame, width=40)
+fromDateEntry.grid(row=3, column=0, pady=10)
+# dateFrom = tkcalendar.DateEntry(
+#     master=exportActivityLogFrame,
+#     width=12,
+#     background="darkblue",
+#     foreground="white",
+#     borderwidth=2,
+#     date_pattern="yyyy-MM-dd",
+# )
+# dateFrom.grid(row=2, column=0, pady=2)
+tk.Label(master=exportActivityLogFrame, text="2. Input TO date (yyyy-MM-dd)").grid(
+    row=4, column=0, pady=2
 )
-dateTo = tkcalendar.DateEntry(
-    master=exportActivityLogFrame,
-    width=12,
-    background="darkblue",
-    foreground="white",
-    borderwidth=2,
-    date_pattern="yyyy-MM-dd",
-)
-dateTo.grid(row=4, column=0, pady=2)
+dateTo = toDateEntry = ttk.Entry(master=exportActivityLogFrame, width=40)
+toDateEntry.grid(row=5, column=0, pady=10)
+# dateTo = tkcalendar.DateEntry(
+#     master=exportActivityLogFrame,
+#     width=12,
+#     background="darkblue",
+#     foreground="white",
+#     borderwidth=2,
+#     date_pattern="yyyy-MM-dd",
+# )
+# dateTo.grid(row=4, column=0, pady=2)
 tk.Label(
-    master=exportActivityLogFrame, text="Search a string", font=("Courier", 15)
-).grid(row=5, column=0, pady=2)
-stringSearchEntry = tk.Entry(master=exportActivityLogFrame, width=80)
-stringSearchEntry.grid(row=6, column=0, pady=2)
-tk.Button(
+    master=exportActivityLogFrame, text="3. Input search string", font=("Courier", 12)
+).grid(row=6, column=0, pady=2)
+stringSearchEntry = ttk.Entry(master=exportActivityLogFrame, width=80)
+stringSearchEntry.grid(row=7, column=0, pady=2)
+ttk.Button(
     master=exportActivityLogFrame,
-    text="Search (this might take awhile)",
-    font=("Courier", 15),
+    text="Search",
     command=partial(exportActivityLog, True),
-).grid(row=7, column=0, pady=2)
-tk.Button(
+).grid(row=8, column=0, pady=10)
+ttk.Button(
     master=exportActivityLogFrame,
-    text="Export Entire Activity Log to CSV (this might take awhile)",
-    font=("Courier", 15),
+    text="Export",
     command=partial(exportActivityLog, False),
-).grid(row=8, column=0, pady=2)
-tk.Button(
+).grid(row=9, column=0, pady=10)
+ttk.Button(
     master=exportActivityLogFrame,
     text="Back to Main Menu",
-    font=("Courier", 22),
     command=goBacktoMainPage,
-).grid(row=9, column=0, pady=2)
+).grid(row=10, column=0, ipadx=10, pady=10)
 
 
-# Export Exceptions
+# Upgrade Agents Frame #############################
 tk.Label(
-    master=exportExclusionsFrame, text="Export Exclusions to CSV", font=("Courier", 44)
-).grid(row=0, column=0, columnspan=2, pady=20)
-tk.Button(
-    master=exportExclusionsFrame,
-    text="Export",
-    font=("Courier", 15),
-    command=exportExclusions,
-).grid(row=1, column=0, pady=2)
-tk.Button(
-    master=exportExclusionsFrame,
+    master=upgradeFromCSVFrame,
+    text="Upgrade Agents",
+    font=("Courier", 30),
+).grid(row=0, column=0, padx=20, pady=20)
+tk.Label(
+    master=upgradeFromCSVFrame, text="Upgrade Agents listed in a CSV to a specific Package (referenced by ID)", font=("Courier", 12)
+).grid(row=1, column=0, padx=20, pady=2)
+tk.Label(
+    master=upgradeFromCSVFrame, text="1. Export Packages List to source Package ID", font=("Courier", 12)
+).grid(row=2, column=0, padx=20, pady=2)
+ttk.Button(
+    master=upgradeFromCSVFrame,
+    text="Export Packages List",
+    command=partial(upgradeFromCSV, True),
+).grid(row=3, column=0, pady=10)
+tk.Label(
+    master=upgradeFromCSVFrame, text="2. Insert the Package ID", font=("Courier", 12)
+).grid(row=4, column=0, pady=2)
+packageIDEntry = ttk.Entry(master=upgradeFromCSVFrame, width=80)
+packageIDEntry.grid(row=5, column=0, pady=2)
+tk.Label(
+    master=upgradeFromCSVFrame,
+    text="3. Select a CSV file containing a single column of endpoint names to upgrade",
+    font=("Courier", 12),
+).grid(row=6, column=0, padx=20, pady=2)
+ttk.Button(
+    master=upgradeFromCSVFrame,
+    text="Browse",
+    command=selectCSVFile,
+).grid(row=7, column=0, pady=2)
+tk.Label(master=upgradeFromCSVFrame, textvariable=inputcsv).grid(
+    row=8, column=0, pady=2
+)
+ttk.Button(
+    master=upgradeFromCSVFrame,
+    text="Submit",
+    command=partial(upgradeFromCSV, False),
+).grid(row=9, column=0, pady=10)
+ttk.Button(
+    master=upgradeFromCSVFrame,
     text="Back to Main Menu",
-    font=("Courier", 22),
     command=goBacktoMainPage,
-).grid(row=2, column=0, pady=2)
+).grid(row=10, column=0, ipadx=10, pady=10)
 
-# Export all agents Frame
+
+# Move Agents Frame #############################
+tk.Label(
+    master=moveAgentsFrame,
+    text="Move Agents",
+    font=("Courier", 30),
+).grid(row=0, column=0, padx=20, pady=20)
+tk.Label(
+    master=moveAgentsFrame,
+    text="1. Export Groups List to get group IDs",
+    font=("Courier", 12),
+).grid(row=1, column=0, pady=2)
+ttk.Button(
+    master=moveAgentsFrame,
+    text="Export Groups List",
+    command=partial(moveAgents, True),
+).grid(row=2, column=0, pady=10)
+tk.Label(
+    master=moveAgentsFrame,
+    text="2. Select a CSV file constructed of three columns:\nendpoints names, target group IDs, target site IDs",
+    font=("Courier", 12),
+).grid(row=3, column=0, padx=20, pady=10)
+ttk.Button(
+    master=moveAgentsFrame, text="Browse", command=selectCSVFile
+).grid(row=4, column=0, pady=10)
+tk.Label(master=moveAgentsFrame, textvariable=inputcsv).grid(row=5, column=0, pady=10)
+ttk.Button(
+    master=moveAgentsFrame,
+    text="Submit",
+    command=partial(moveAgents, False),
+).grid(row=6, column=0, pady=10)
+ttk.Button(
+    master=moveAgentsFrame,
+    text="Back to Main Menu",
+    command=goBacktoMainPage,
+).grid(row=7, column=0, ipadx=10, pady=10)
+
+
+# Assign Customer Identifier Frame #############################
+tk.Label(
+    master=assignCustomerIdentifierFrame,
+    text="Assign Customer Identifier",
+    font=("Courier", 30),
+).grid(row=0, column=0, padx=20, pady=20)
+tk.Label(
+    master=assignCustomerIdentifierFrame,
+    text="Assign a Customer Identifier to one or more Agents.\n\n1. Input the Customer Identifier to assign.",
+    font=("Courier", 12),
+).grid(row=1, column=0, pady=2)
+customerIdentifierEntry = ttk.Entry(master=assignCustomerIdentifierFrame, width=80)
+customerIdentifierEntry.grid(row=2, column=0, pady=(2,10))
+tk.Label(
+    master=assignCustomerIdentifierFrame,
+    text="2. Select a CSV file containing a single column with endpoint names",
+    font=("Courier", 12),
+).grid(row=3, column=0, padx=20, pady=2)
+ttk.Button(
+    master=assignCustomerIdentifierFrame,
+    text="Browse",
+    command=selectCSVFile,
+).grid(row=4, column=0, pady=10)
+tk.Label(master=assignCustomerIdentifierFrame, textvariable=inputcsv).grid(
+    row=5, column=0, pady=10
+)
+ttk.Button(
+    master=assignCustomerIdentifierFrame,
+    text="Submit",
+    command=assignCustomerIdentifier,
+).grid(row=6, column=0, pady=10)
+ttk.Button(
+    master=assignCustomerIdentifierFrame,
+    text="Back to Main Menu",
+    command=goBacktoMainPage,
+).grid(row=7, column=0, ipadx=10, pady=10)
+
+
+# Decomission Agents from CSV Frame #############################
+tk.Label(
+    master=decomissionAgentsFrame,
+    text="Decomission Agents",
+    font=("Courier", 30),
+).grid(row=0, column=0, padx=20, pady=20)
+tk.Label(
+    master=decomissionAgentsFrame,
+    text="1. Select a CSV file containing a single column of endpoint names to be decomissioned",
+    font=("Courier", 12),
+).grid(row=1, column=0, padx=20, pady=2)
+ttk.Button(
+    master=decomissionAgentsFrame,
+    text="Browse",
+    command=selectCSVFile,
+).grid(row=2, column=0, pady=10)
+tk.Label(master=decomissionAgentsFrame, textvariable=inputcsv).grid(
+    row=3, column=0, pady=10
+)
+ttk.Button(
+    master=decomissionAgentsFrame,
+    text="Submit",
+    command=decomissionAgents,
+).grid(row=4, column=0, pady=10)
+ttk.Button(
+    master=decomissionAgentsFrame,
+    text="Back to Main Menu",
+    command=goBacktoMainPage,
+).grid(row=5, column=0, ipadx=10, pady=10)
+
+
+# Export all agents Frame #############################
 tk.Label(
     master=exportAllAgentsFrame,
-    text="Export Endpoints Details to CSV",
-    font=("Courier", 44),
-).grid(row=0, column=0, columnspan=2, pady=20)
-tk.Button(
+    text="Export Endpoint Details to CSV",
+    font=("Courier", 30),
+).grid(row=0, column=0, padx=20, pady=20)
+ttk.Button(
     master=exportAllAgentsFrame,
     text="Export",
-    font=("Courier", 15),
     command=exportAllAgents,
-).grid(row=1, column=0, pady=2)
-tk.Button(
+).grid(row=1, column=0, pady=10)
+ttk.Button(
     master=exportAllAgentsFrame,
     text="Back to Main Menu",
-    font=("Courier", 22),
     command=goBacktoMainPage,
-).grid(row=2, column=0, pady=2)
+).grid(row=2, column=0, ipadx=10, pady=10)
 
 
-window.mainloop()
+# Export Exclusions #############################
+tk.Label(
+    master=exportExclusionsFrame, text="Export Exclusions to CSV", font=("Courier", 30)
+).grid(row=0, column=0, padx=20, pady=20)
+ttk.Button(
+    master=exportExclusionsFrame,
+    text="Export",
+    command=exportExclusions,
+).grid(row=1, column=0, pady=10)
+ttk.Button(
+    master=exportExclusionsFrame,
+    text="Back to Main Menu",
+    command=goBacktoMainPage,
+).grid(row=2, column=0, ipadx=10, pady=10)
+
+
+def main():
+    window.mainloop()
+
+
+if __name__ == "__main__":
+    main()

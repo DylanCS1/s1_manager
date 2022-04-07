@@ -131,6 +131,7 @@ dmypy.json
 
 # Others
 *.csv
+*.xlsx
 *.log
 *.pdf
 *.zip

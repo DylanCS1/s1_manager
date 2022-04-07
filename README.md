@@ -89,7 +89,7 @@ To generate a Deep Visibility query:
 3. Open your web browser's Developer Tools (```F12 or CTRL+SHIFT+i```)
 4. Open the Network tab 
 5. Run the query in the Management Console
-6. Click on init-query and copy your queryID
+6. Click on init-query and copy your `queryID`
 
 ![image_1](dist/s1_manager/tk/images/image_1.png)
 
@@ -190,12 +190,13 @@ Export all exclusions from the Account scope.
 ## Roadmap
 
 - [ ] Add additional features around newer API offerings
-- [ ] Update dependencies
+- [x] Update dependencies
 - [ ] UI Enhancements
-    - [ ] Uniformity between panes, buttons, font, etc.
-    - [ ] Improve color theme
+    - [x] Uniformity between panes, buttons, font, etc.
+    - [x] Improve color theme
 - [ ] Implement code styling restraints
 - [ ] Refactor/cleanup code
+- [ ] Address asyncio `DeprecationWarning: There is no current event loop`
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
@@ -242,7 +243,8 @@ And to the following resources:
 - [Python](https://www.python.org/downloads/ "Python Download")
 - [Requests](https://docs.python-requests.org/en/latest/ "Python Requests library")
 - [Babel](https://babel.pocoo.org/en/latest/index.html "Python Babel library")
-- [Othneildrew](https://github.com/othneildrew) for the README.md template.  
+- [Othneildrew](https://github.com/othneildrew) for the README.md template. 
+- [rdbende Sun-Valley-ttk-theme](https://github.com/rdbende/Sun-Valley-ttk-theme)
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
