@@ -19,21 +19,20 @@ from tkinter import ttk
 
 import aiohttp
 import requests
-# import tkcalendar
 from xlsxwriter.workbook import Workbook
 
 import gui
 
 # Consts #############################
-__version__ = "2.0.0"
+__version__ = "2022.0.2"
 api_version = "v2.1"
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
 window = tk.Tk()
 window.title("S1 Manager")
-window.minsize(window.winfo_width(), window.winfo_height())
+window.minsize(900, 700)
 
-window.tk.call("source", os.path.join(dir_path, "forest-dark.tcl")) # https://github.com/rdbende/Forest-ttk-theme
+window.tk.call("source", os.path.join(dir_path, ".THEME/forest-dark.tcl")) # https://github.com/rdbende/Forest-ttk-theme
 ttk.Style().theme_use("forest-dark")
 
 loginMenuFrame = tk.Frame()
@@ -132,7 +131,7 @@ def goBacktoMainPage():
         if item.winfo_children():
             _list.extend(item.winfo_children())
     for item in _list:
-        if isinstance(item, tkinter.Toplevel) is not True:
+        if isinstance(item, tk.Toplevel) is not True:
             item.pack_forget()
     mainMenuFrame.pack()
 
@@ -384,8 +383,8 @@ def exportFromDV():
                             worksheet.write(r, c, col)
                 os.remove(csvfile)
         workbook.close()
-        done = "Done! Created the file " + filename + ".xlsx"
-        tk.Label(master=exportFromDVFrame, text=done, font=("Courier", 18)).grid(
+        done = f"Done! Created the file {filename}.xlsx"
+        tk.Label(master=exportFromDVFrame, text=done).grid(
             row=6, column=0, pady=2
         )
     else:
@@ -709,7 +708,7 @@ def assignCustomerIdentifier():
         master=assignCustomerIdentifierFrame, state="disabled", height=10
     )
     st.configure(font="TkFixedFont")
-    st.grid(row=9, column=0, pady=10)
+    st.grid(row=8, column=0, pady=10)
     text_handler = TextHandler(st)
     logging.basicConfig(
         filename="upgradefromcsv.log",
@@ -758,7 +757,7 @@ def assignCustomerIdentifier():
 def exportAllAgents():
     st = ScrolledText.ScrolledText(master=exportAllAgentsFrame, state="disabled", height=10)
     st.configure(font="TkFixedFont")
-    st.grid(row=3, column=0, pady=10)
+    st.grid(row=4, column=0, pady=10)
     text_handler = TextHandler(st)
     logging.basicConfig(
         filename="exportallagentstocsv.log",
@@ -888,7 +887,7 @@ def decomissionAgents():
 def exportExclusions():
     st = ScrolledText.ScrolledText(master=exportExclusionsFrame, state="disabled", height=10)
     st.configure(font="TkFixedFont")
-    st.grid(row=3, column=0, pady=10)
+    st.grid(row=4, column=0, pady=10)
     text_handler = TextHandler(st)
     logging.basicConfig(
         filename="exportExclusions.log",
@@ -1430,8 +1429,8 @@ useSSLSwitch = ttk.Checkbutton(master=loginMenuFrame, text="Use SSL", style="Swi
 loginButton = ttk.Button(
     master=loginMenuFrame, text="Login", command=login
 )
-tk.Label(master=loginMenuFrame, text="API: {}".format(api_version), font=("Courier", 12)).grid(
-    row=9, column=0, pady=10
+tk.Label(master=loginMenuFrame, text="API: {}".format(api_version)).grid(
+    row=9, column=0, pady=10, sticky='s'
 )
 consoleAddressLabel.grid(row=1, column=0, pady=2)
 consoleAddressEntry.grid(row=2, column=0, pady=2)
@@ -1440,55 +1439,57 @@ apikTokenEntry.grid(row=4, column=0, pady=2)
 proxyLabel.grid(row=5, column=0, pady=(10,2))
 proxyEntry.grid(row=6, column=0, pady=2)
 useSSLSwitch.grid(row=7, column=0, pady=10)
-loginButton.grid(row=8, column=0, columnspan=2, pady=10)
+loginButton.grid(row=8, column=0, columnspan=2, ipady=5, pady=10)
 loginMenuFrame.pack()
 
 # Main Menu Frame #############################
+tk.Label(master=mainMenuFrame, text=gui.logo, font="TkFixedFont", fg=gui.logo_color).grid(
+    row=0, column=0, columnspan=2, pady=20, padx=20
+)
 ttk.Button(
     master=mainMenuFrame,
     text="Export Deep Visiblity Events",
     command=partial(switchFrames, exportFromDVFrame),
-).grid(row=1, column=0, pady=10, padx=10)
+).grid(row=1, column=0, sticky="ew", ipady=5, pady=10, padx=(20,10))
 ttk.Button(
     master=mainMenuFrame,
     text="Export and Search Activity Log",
     command=partial(switchFrames, exportActivityLogFrame),
-).grid(row=1, column=1, pady=10, padx=10)
+).grid(row=1, column=1, sticky="ew", ipady=5, pady=10, padx=(10,20))
 ttk.Button(
     master=mainMenuFrame,
     text="Upgrade Agents",
     command=partial(switchFrames, upgradeFromCSVFrame),
-).grid(row=2, column=0, pady=10, padx=10)
+).grid(row=2, column=0, sticky="ew", ipady=5, pady=10, padx=(20,10))
 ttk.Button(
     master=mainMenuFrame,
     text="Move Agents",
     command=partial(switchFrames, moveAgentsFrame),
-).grid(row=2, column=1, pady=10, padx=10)
+).grid(row=2, column=1, sticky="ew", ipady=5, pady=10, padx=(10,20))
 ttk.Button(
     master=mainMenuFrame,
     text="Assign Customer Identifier",
     command=partial(switchFrames, assignCustomerIdentifierFrame),
-).grid(row=3, column=0, pady=10, padx=10)
+).grid(row=3, column=0, sticky="ew", ipady=5, pady=10, padx=(20,10))
 ttk.Button(
     master=mainMenuFrame,
     text="Decomission Agents",
     command=partial(switchFrames, decomissionAgentsFrame),
-).grid(row=3, column=1, pady=10, padx=10)
+).grid(row=3, column=1, sticky="ew", ipady=5, pady=10, padx=(10,20))
 ttk.Button(
     master=mainMenuFrame,
     text="Export All Endpoints",
     command=partial(switchFrames, exportAllAgentsFrame),
-).grid(row=4, column=0, pady=10, padx=10)
+).grid(row=4, column=0, sticky="ew", ipady=5, pady=10, padx=(20,10))
 ttk.Button(
     master=mainMenuFrame,
     text="Export Exclusions",
     command=partial(switchFrames, exportExclusionsFrame),
-).grid(row=4, column=1, pady=10, padx=10)
+).grid(row=4, column=1, sticky="ew", ipady=5, pady=10, padx=(10,20))
 tk.Label(
     master=mainMenuFrame,
-    text="Note: Many of the processes can take a while to run. Be patient.",
-    font=("Courier", 10),
-).grid(row=5, column=0, columnspan=2, padx=20, pady=(20,10))
+    text="Note: Many of the processes can take a while to run. Be patient."
+).grid(row=5, column=0, columnspan=2, padx=20, pady=20, sticky='s')
 
 # Export from DV Frame #############################
 tk.Label(
@@ -1498,13 +1499,11 @@ tk.Label(
 ).grid(row=0, column=0, padx=20, pady=20)
 tk.Label(
     master=exportFromDVFrame,
-    text="Export Deep Visibility events to a CSV by query ID as reference",
-    font=("Courier", 12),
+    text="Export Deep Visibility events to a CSV by query ID as reference"
 ).grid(row=1, column=0, padx=20, pady=10)
 tk.Label(
     master=exportFromDVFrame,
-    text="1. Input Deep Visibility Query ID",
-    font=("Courier", 12),
+    text="1. Input Deep Visibility Query ID"
 ).grid(row=2, column=0, pady=2)
 queryIdEntry = ttk.Entry(master=exportFromDVFrame, width=80)
 queryIdEntry.grid(row=3, column=0, pady=10)
@@ -1524,7 +1523,7 @@ ttk.Button(
 tk.Label(
     master=exportActivityLogFrame,
     text="Export and Search Activity Log",
-    font=("Courier", 30),
+    font=("Courier", 24),
 ).grid(row=0, column=0, padx=20, pady=20)
 tk.Label(master=exportActivityLogFrame, text="Search Management Console Activity log and export results.").grid(
     row=1, column=0, padx=20, pady=10
@@ -1534,31 +1533,13 @@ tk.Label(master=exportActivityLogFrame, text="1. Input FROM date (yyyy-MM-dd)").
 )
 dateFrom = fromDateEntry = ttk.Entry(master=exportActivityLogFrame, width=40)
 fromDateEntry.grid(row=3, column=0, pady=10)
-# dateFrom = tkcalendar.DateEntry(
-#     master=exportActivityLogFrame,
-#     width=12,
-#     background="darkblue",
-#     foreground="white",
-#     borderwidth=2,
-#     date_pattern="yyyy-MM-dd",
-# )
-# dateFrom.grid(row=2, column=0, pady=2)
 tk.Label(master=exportActivityLogFrame, text="2. Input TO date (yyyy-MM-dd)").grid(
     row=4, column=0, pady=2
 )
 dateTo = toDateEntry = ttk.Entry(master=exportActivityLogFrame, width=40)
 toDateEntry.grid(row=5, column=0, pady=10)
-# dateTo = tkcalendar.DateEntry(
-#     master=exportActivityLogFrame,
-#     width=12,
-#     background="darkblue",
-#     foreground="white",
-#     borderwidth=2,
-#     date_pattern="yyyy-MM-dd",
-# )
-# dateTo.grid(row=4, column=0, pady=2)
 tk.Label(
-    master=exportActivityLogFrame, text="3. Input search string", font=("Courier", 12)
+    master=exportActivityLogFrame, text="3. Input search string"
 ).grid(row=6, column=0, pady=2)
 stringSearchEntry = ttk.Entry(master=exportActivityLogFrame, width=80)
 stringSearchEntry.grid(row=7, column=0, pady=2)
@@ -1583,13 +1564,13 @@ ttk.Button(
 tk.Label(
     master=upgradeFromCSVFrame,
     text="Upgrade Agents",
-    font=("Courier", 30),
+    font=("Courier", 24),
 ).grid(row=0, column=0, padx=20, pady=20)
 tk.Label(
-    master=upgradeFromCSVFrame, text="Upgrade Agents listed in a CSV to a specific Package (referenced by ID)", font=("Courier", 12)
+    master=upgradeFromCSVFrame, text="Upgrade Agents listed in a CSV to a specific Package (referenced by ID)"
 ).grid(row=1, column=0, padx=20, pady=2)
 tk.Label(
-    master=upgradeFromCSVFrame, text="1. Export Packages List to source Package ID", font=("Courier", 12)
+    master=upgradeFromCSVFrame, text="1. Export Packages List to source Package ID"
 ).grid(row=2, column=0, padx=20, pady=2)
 ttk.Button(
     master=upgradeFromCSVFrame,
@@ -1597,14 +1578,13 @@ ttk.Button(
     command=partial(upgradeFromCSV, True),
 ).grid(row=3, column=0, pady=10)
 tk.Label(
-    master=upgradeFromCSVFrame, text="2. Insert the Package ID", font=("Courier", 12)
+    master=upgradeFromCSVFrame, text="2. Insert the Package ID"
 ).grid(row=4, column=0, pady=2)
 packageIDEntry = ttk.Entry(master=upgradeFromCSVFrame, width=80)
 packageIDEntry.grid(row=5, column=0, pady=2)
 tk.Label(
     master=upgradeFromCSVFrame,
-    text="3. Select a CSV file containing a single column of endpoint names to upgrade",
-    font=("Courier", 12),
+    text="3. Select a CSV file containing a single column of endpoint names to upgrade"
 ).grid(row=6, column=0, padx=20, pady=2)
 ttk.Button(
     master=upgradeFromCSVFrame,
@@ -1630,12 +1610,11 @@ ttk.Button(
 tk.Label(
     master=moveAgentsFrame,
     text="Move Agents",
-    font=("Courier", 30),
+    font=("Courier", 24),
 ).grid(row=0, column=0, padx=20, pady=20)
 tk.Label(
     master=moveAgentsFrame,
-    text="1. Export Groups List to get group IDs",
-    font=("Courier", 12),
+    text="1. Export Groups List to get group IDs"
 ).grid(row=1, column=0, pady=2)
 ttk.Button(
     master=moveAgentsFrame,
@@ -1644,8 +1623,7 @@ ttk.Button(
 ).grid(row=2, column=0, pady=10)
 tk.Label(
     master=moveAgentsFrame,
-    text="2. Select a CSV file constructed of three columns:\nendpoints names, target group IDs, target site IDs",
-    font=("Courier", 12),
+    text="2. Select a CSV file constructed of three columns:\nendpoints names, target group IDs, target site IDs"
 ).grid(row=3, column=0, padx=20, pady=10)
 ttk.Button(
     master=moveAgentsFrame, text="Browse", command=selectCSVFile
@@ -1667,19 +1645,17 @@ ttk.Button(
 tk.Label(
     master=assignCustomerIdentifierFrame,
     text="Assign Customer Identifier",
-    font=("Courier", 30),
+    font=("Courier", 24),
 ).grid(row=0, column=0, padx=20, pady=20)
 tk.Label(
     master=assignCustomerIdentifierFrame,
-    text="Assign a Customer Identifier to one or more Agents.\n\n1. Input the Customer Identifier to assign.",
-    font=("Courier", 12),
+    text="Assign a Customer Identifier to one or more Agents.\n\n1. Input the Customer Identifier to assign."
 ).grid(row=1, column=0, pady=2)
 customerIdentifierEntry = ttk.Entry(master=assignCustomerIdentifierFrame, width=80)
 customerIdentifierEntry.grid(row=2, column=0, pady=(2,10))
 tk.Label(
     master=assignCustomerIdentifierFrame,
-    text="2. Select a CSV file containing a single column with endpoint names",
-    font=("Courier", 12),
+    text="2. Select a CSV file containing a single column with endpoint names"
 ).grid(row=3, column=0, padx=20, pady=2)
 ttk.Button(
     master=assignCustomerIdentifierFrame,
@@ -1705,12 +1681,11 @@ ttk.Button(
 tk.Label(
     master=decomissionAgentsFrame,
     text="Decomission Agents",
-    font=("Courier", 30),
+    font=("Courier", 24),
 ).grid(row=0, column=0, padx=20, pady=20)
 tk.Label(
     master=decomissionAgentsFrame,
-    text="1. Select a CSV file containing a single column of endpoint names to be decomissioned",
-    font=("Courier", 12),
+    text="1. Select a CSV file containing a single column of endpoint names to be decomissioned"
 ).grid(row=1, column=0, padx=20, pady=2)
 ttk.Button(
     master=decomissionAgentsFrame,
@@ -1736,34 +1711,40 @@ ttk.Button(
 tk.Label(
     master=exportAllAgentsFrame,
     text="Export Endpoint Details to CSV",
-    font=("Courier", 30),
+    font=("Courier", 24),
 ).grid(row=0, column=0, padx=20, pady=20)
+tk.Label(
+    master=exportAllAgentsFrame, text="Exports All Agent Details to a CSV"
+).grid(row=1, column=0, padx=20, pady=2)
 ttk.Button(
     master=exportAllAgentsFrame,
     text="Export",
     command=exportAllAgents,
-).grid(row=1, column=0, pady=10)
+).grid(row=2, column=0, pady=10)
 ttk.Button(
     master=exportAllAgentsFrame,
     text="Back to Main Menu",
     command=goBacktoMainPage,
-).grid(row=2, column=0, ipadx=10, pady=10)
+).grid(row=3, column=0, ipadx=10, pady=10)
 
 
 # Export Exclusions #############################
 tk.Label(
-    master=exportExclusionsFrame, text="Export Exclusions to CSV", font=("Courier", 30)
+    master=exportExclusionsFrame, text="Export Exclusions to CSV", font=("Courier", 24)
 ).grid(row=0, column=0, padx=20, pady=20)
+tk.Label(
+    master=exportExclusionsFrame, text="Exports All Exclusions to a CSV"
+).grid(row=1, column=0, padx=20, pady=2)
 ttk.Button(
     master=exportExclusionsFrame,
     text="Export",
     command=exportExclusions,
-).grid(row=1, column=0, pady=10)
+).grid(row=2, column=0, pady=10)
 ttk.Button(
     master=exportExclusionsFrame,
     text="Back to Main Menu",
     command=goBacktoMainPage,
-).grid(row=2, column=0, ipadx=10, pady=10)
+).grid(row=3, column=0, ipadx=10, pady=10)
 
 
 def main():

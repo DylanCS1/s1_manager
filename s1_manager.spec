@@ -4,11 +4,11 @@
 block_cipher = None
 
 added_files = [
-    ( 'forest-dark.tcl', '.' ),
-    ('forest-dark\\*.png', 'forest-dark' )
+    ( '.THEME\\forest-dark.tcl', '.THEME' ),
+    ('.THEME\\forest-dark\\*.png', '.THEME\\forest-dark' )
 ]
 
-a = Analysis(['..\\s1_manager.py'],
+a = Analysis(['s1_manager.py'],
              pathex=[],
              binaries=[],
              datas=added_files,
