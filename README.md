@@ -24,9 +24,13 @@ The S1 Manager tool is a GUI-based application to assist SentinelOne administrat
 ## Getting Started
 
 ### Download EXE
-[https://github.com/DylanCS1/s1_manager/blob/main/dist/s1_manager.exe](https://github.com/DylanCS1/s1_manager/blob/main/dist/s1_manager.exe)
+To download the latest release:
+- [https://github.com/DylanCS1/s1_manager/releases/download/v2022.0.1/s1_manager.exe](https://github.com/DylanCS1/s1_manager/releases/download/v2022.0.1/s1_manager.exe)
+- SHA1: 79BB8330112A1574CAE0A153C35AE7F70FB8C393
 
-SHA1: 79BB8330112A1574CAE0A153C35AE7F70FB8C393
+To download the pre-2022 release:
+- [https://github.com/DylanCS1/s1_manager/blob/main/dist/s1_manager-1.0.exe](https://github.com/DylanCS1/s1_manager/blob/main/dist/s1_manager-1.0.exe)
+- SHA1: 1E03D09572BFAA5823295606DDE1D39A94EB6939
 
 
 ### Run from source
@@ -86,20 +90,26 @@ To generate a Deep Visibility query:
 1. Log in to the Management Console
 2. Go to the Deep Visibility Page and create the query. For example: *AgentName Contains "test" AND AgentOS = "windows"*
  
-![image](dist/s1_manager/tk/images/image.png)
+![Deep Visibility Query][dv-screenshot]
+
 
 3. Open your web browser's Developer Tools (```F12 or CTRL+SHIFT+i```)
 4. Open the Network tab 
 5. Run the query in the Management Console
 6. Click on init-query and copy your `queryID`
 
-![image_1](dist/s1_manager/tk/images/image_1.png)
+![Developer Tools example][dev-tools-screenshot]
 
 
 ### Search and Export Activity Log
 
 Search and export the activity log.
 > Search is not Case Sensitive
+
+Process:
+1. Input a FROM and TO date in the format of yyyy-dd-mm
+2. Input a search term (string)
+3. Click Search, then Export to save the results to CSV
 
 
 ### Upgrade Agents from CSV
@@ -118,7 +128,7 @@ Process:
 2. Insert the package ID
 3. Select a CSV containing a single column of endpoint names to be upgraded. For example:
 
-![image_2](dist/s1_manager/tk/images/image_2.png)
+![Endpoint Names Example][endpoint-screenshot]
 
 
 ### Move Agents from CSV
@@ -135,10 +145,11 @@ Requirements:
 
 Process:
 1. Export groups list to get the relevant Group ID 
-> Please see the note above if using Microsoft Excel
-![image_3](dist/s1_manager/tk/images/image_3.png)
-2. Create a CSV file containing three columns without headers
-![image_4](dist/s1_manager/tk/images/image_4.png)
+> Please see the note above if using Microsoft Excel 
+
+![Group ID example][group-id-screenshot]  
+2. Create a CSV file containing three columns without headers (refer to requirements above)
+![Example CSV][csv-example-screenshot]
 
 
 ### Assign Customer Identifier from CSV
@@ -155,7 +166,7 @@ Process:
 2. Select a CSV containing endpoint names
 > If you have duplicate names, all the endpoints with this name will be assigned the same customer identifier
 
-![image_2](dist/s1_manager/tk/images/image_2.png)
+![Endpoint Names Example][endpoint-screenshot]
 
 
 ### Decomission Agents from CSV
@@ -170,7 +181,7 @@ Process:
 1. Select a CSV containing endpoint names to be decomissioned
 > If you have duplicate names, all the endpoints with this name will be decomissioned.
 
-![image_2](dist/s1_manager/tk/images/image_2.png)
+![Endpoint Names Example][endpoint-screenshot]
 
 
 ### Export all Agents to CSV
@@ -183,7 +194,7 @@ Export the list of Agents in the SentinelOne console.
 
 Export all exclusions from the Account scope.
 
-![](.README_images/8cf66cf4.png)
+![Exclusion CSV Example][exclusion-screenshot]
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
@@ -198,7 +209,6 @@ Export all exclusions from the Account scope.
     - [x] Improve color theme
 - [ ] Implement code styling restraints
 - [ ] Refactor/cleanup code
-- [ ] Address asyncio `DeprecationWarning: There is no current event loop`
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
@@ -251,10 +261,16 @@ And to the following resources:
 <p align="right">(<a href="#top">back to top</a>)</p>
 
 
-<!-- MARKDOWN LINKS & IMAGES -->
-<!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
-
+<!-- LINKS -->
 [contributors-url]: https://github.com/DylanCS1/s1_manager/graphs/contributors "Contributors"
 [issues-url]: https://github.com/DylanCS1/s1_manager/issues "Issues"
 [license-url]: https://github.com/DylanCS1/s1_manager/blob/main/LICENSE.txt "MIT License"
-[product-screenshot]: dist/s1_manager/tk/images/image_5.png "S1 Manager Screenshot"
+
+<!-- Images -->
+[product-screenshot]: .README/product_screenshot.png "S1 Manager Screenshot"
+[dv-screenshot]: .README/dv_query.png "Deep Visibility Query"
+[exclusion-screenshot]: .README/exclusion_export.png "Example Exclusion CSV"
+[endpoint-screenshot]: .README/endpoint_names.png "CSV Endpoint Names example"
+[dev-tools-screenshot]: .README/dev_tools.png "Dev Tools example"
+[group-id-screenshot]: .README/group_id.png "Group ID example"
+[csv-example-screenshot]: .README/csv_example.png "CSV example"
