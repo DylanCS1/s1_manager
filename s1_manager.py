@@ -15,16 +15,17 @@ import tkinter as tk
 import tkinter.filedialog
 import tkinter.scrolledtext as ScrolledText
 from functools import partial
-from tkinter import ttk
+from tkinter import StringVar, ttk
 
 import aiohttp
 import requests
 from xlsxwriter.workbook import Workbook
 
+# import config
 import gui
 
 # Consts #############################
-__version__ = "2022.0.2"
+__version__ = "2022.0.3"
 api_version = "v2.1"
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
@@ -44,6 +45,8 @@ moveAgentsFrame = tk.Frame()
 assignCustomerIdentifierFrame = tk.Frame()
 decomissionAgentsFrame = tk.Frame()
 exportAllAgentsFrame = tk.Frame()
+exportEndpointTagsFrame = tk.Frame()
+manageEndpointTagsFrame = tk.Frame()
 error = tk.StringVar()
 hostname = tk.StringVar()
 apitoken = tk.StringVar()
@@ -429,6 +432,7 @@ def exportActivityLog(searchOnly):
                     logger.error(
                         f"Status: {str(response.status_code)} Problem with the request. Details - {str(response.text)}"
                     )
+                    break
                 else:
                     data = response.json()
                     cursor = data["pagination"]["nextCursor"]
@@ -477,6 +481,7 @@ def exportActivityLog(searchOnly):
                     logger.error(
                         f"Status: {str(response.status_code)} Problem with the request. Details - {str(response.text)}"
                     )
+                    break
                 else:
                     data = response.json()
                     cursor = data["pagination"]["nextCursor"]
@@ -619,7 +624,7 @@ def moveAgents(justGroups):
 
     if justGroups:
         params = (
-            "/web/api/v2.0/groups?isDefault=false&limit=100&type=static&countOnly=false" #TODO 2.0?
+            "/web/api/v2.0/groups?isDefault=false&limit=100&type=static&countOnly=false" #TODO Should this be using the v2.0 API?
         )
         url = hostname.get() + params
         f = csv.writer(open("group_to_id_map.csv", "a+", newline="", encoding="utf-8"))
@@ -651,7 +656,7 @@ def moveAgents(justGroups):
                         )
                 if cursor:
                     paramsnext = (
-                        f"/web/api/v2.0/groups?isDefault=false&limit=100&type=static&cursor={cursor}&countOnly=false" #TODO 2.0?
+                        f"/web/api/v2.0/groups?isDefault=false&limit=100&type=static&cursor={cursor}&countOnly=false" #TODO Should this be using the v2.0 API?
                     )
                     url = hostname.get() + paramsnext
                 else:
@@ -711,7 +716,7 @@ def assignCustomerIdentifier():
     st.grid(row=8, column=0, pady=10)
     text_handler = TextHandler(st)
     logging.basicConfig(
-        filename="upgradefromcsv.log",
+        filename="assigncustomerid.log",
         level=logging.INFO,
         format="%(asctime)s - %(levelname)s - %(message)s",
     )
@@ -784,6 +789,7 @@ def exportAllAgents():
             logger.error(
                 f"Status: {str(response.status_code)} Problem with the request. Details - {str(response.text)}"
             )
+            break
         else:
             data = response.json()
             cursor = data["pagination"]["nextCursor"]
@@ -1399,6 +1405,109 @@ def exportExclusions():
     logger.info(f"Done! Created the file {filename}.xlsx")
 
 
+def exportEndpointTags():
+    st = ScrolledText.ScrolledText(master=exportEndpointTagsFrame, state="disabled", height=10)
+    st.configure(font="TkFixedFont")
+    st.grid(row=5, column=0, pady=10)
+    text_handler = TextHandler(st)
+    logging.basicConfig(
+        filename="exportendointtagstocsv.log",
+        level=logging.INFO,
+        format="%(asctime)s - %(levelname)s - %(message)s",
+    )
+    logger = logging.getLogger()
+    logger.addHandler(text_handler)
+
+    timestamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+    f = csv.writer(
+        open(f"endpointtagsexport_{timestamp}.csv", "a+", newline="", encoding="utf-8")
+    )
+    firstrun = True
+    url = hostname.get() + f"/web/api/{api_version}/agents/tags?includeChildren=true&includeParents=true&limit=1000"
+    while url:
+        response = requests.get(
+            url,
+            headers=headers,
+            proxies={"http": proxy.get(), "https": proxy.get()},
+            verify=useSSL.get(),
+        )
+        if response.status_code != 200:
+            logger.error(
+                f"Status: {str(response.status_code)} Problem with the request. Details - {str(response.text)}"
+            )
+            break
+        else:
+            data = response.json()
+            cursor = data["pagination"]["nextCursor"]
+            data = data["data"]
+            if data:
+                if firstrun:
+                    tmp = []
+                    for key, value in data[0].items():
+                        tmp.append(key)
+                    f.writerow(tmp)
+                    firstrun = False
+                for item in data:
+                    tmp = []
+                    for key, value in item.items():
+                        tmp.append(value)
+                    f.writerow(tmp)
+            if cursor:
+                paramsnext = f"/web/api/{api_version}/agents/tags?includeChildren=true&includeParents=true&limit=1000&cursor={cursor}"
+                url = hostname.get() + paramsnext
+            else:
+                url = None
+    logger.info(f"Done! Output file is - endpointtagsexport_{timestamp}.csv")
+
+
+def manageEndpointTags(action, tag_id):
+    """Add or Remove Endpoint Tags from Agents"""
+    st = ScrolledText.ScrolledText(
+        master=manageEndpointTagsFrame, state="disabled", height=10
+    )
+    st.configure(font="TkFixedFont")
+    st.grid(row=10, column=0, columnspan=2, pady=10)
+    text_handler = TextHandler(st)
+    logging.basicConfig(
+        filename="manageendpointtags.log",
+        level=logging.INFO,
+        format="%(asctime)s - %(levelname)s - %(message)s",
+    )
+    logger = logging.getLogger()
+    logger.addHandler(text_handler)
+
+    with open(inputcsv.get()) as csv_file:
+        csv_reader = csv.reader(csv_file, delimiter=",")
+        line_count = 0
+        for row in csv_reader:
+            logger.info(f"Updating Endpoint Tags for UUID -  {row[0]}")
+            url = hostname.get() + f"/web/api/{api_version}/agents/actions/manage-tags"
+            body = {
+                "filter": {"uuids": row[0]},
+                "data": [{"operation": endpointTagsAction.get(),"tagId": tagIDEntry.get()}],
+            }
+            response = requests.post(
+                url,
+                data=json.dumps(body),
+                headers=headers,
+                proxies={"http": proxy.get(), "https": proxy.get()},
+                verify=useSSL.get(),
+            )
+            if response.status_code != 200:
+                logger.error(
+                    f"Failed to update Endpoint Tag for agent UUID {row[0]} Error code: {str(response.status_code)} Description: {str(response.text)}"
+                )
+            else:
+                r = response.json()
+                affected_num_of_endpoints = r["data"]["affected"]
+                if affected_num_of_endpoints < 1:
+                    logger.info(f"Endpoint Tag not updated for agent UUID {row[0]}")
+                else:
+                    logger.info(f"Successfully updated the Endpoint Tag")
+            line_count += 1
+        logger.info(f"Finished! Processed {line_count} lines.")
+
+
 def selectCSVFile():
     file = tkinter.filedialog.askopenfilename()
     inputcsv.set(file)
@@ -1413,12 +1522,14 @@ consoleAddressLabel = tk.Label(
     text="Management Console URL:",
 )
 consoleAddressEntry = ttk.Entry(master=loginMenuFrame, width=80)
+# consoleAddressEntry.insert(0, config.CONSOLE_URL)
 
 apikTokenLabel = tk.Label(
     master=loginMenuFrame,
     text="API Token:"
 )
 apikTokenEntry = ttk.Entry(master=loginMenuFrame, width=80)
+# apikTokenEntry.insert(0, config.API_TOKEN)
 
 proxyLabel = tk.Label(
     master=loginMenuFrame,
@@ -1486,10 +1597,23 @@ ttk.Button(
     text="Export Exclusions",
     command=partial(switchFrames, exportExclusionsFrame),
 ).grid(row=4, column=1, sticky="ew", ipady=5, pady=10, padx=(10,20))
+ttk.Button(
+    master=mainMenuFrame,
+    text="Export Endpoint Tags",
+    command=partial(switchFrames, exportEndpointTagsFrame),
+).grid(row=5, column=0, sticky="ew", ipady=5, pady=10, padx=(20,10))
+ttk.Button(
+    master=mainMenuFrame,
+    text="Manage Endpoint Tags",
+    command=partial(switchFrames, manageEndpointTagsFrame),
+).grid(row=5, column=1, sticky="ew", ipady=5, pady=10, padx=(10,20))
+
+
 tk.Label(
     master=mainMenuFrame,
     text="Note: Many of the processes can take a while to run. Be patient."
-).grid(row=5, column=0, columnspan=2, padx=20, pady=20, sticky='s')
+).grid(row=6, column=0, columnspan=2, padx=20, pady=20, sticky='s')
+
 
 # Export from DV Frame #############################
 tk.Label(
@@ -1519,10 +1643,10 @@ ttk.Button(
 ).grid(row=5, column=0, ipadx=10, pady=10)
 
 
-# Export and Search Activity Log Frame #############################
+# Search and Export Activity Log Frame #############################
 tk.Label(
     master=exportActivityLogFrame,
-    text="Export and Search Activity Log",
+    text="Search and Export Activity Log",
     font=("Courier", 24),
 ).grid(row=0, column=0, padx=20, pady=20)
 tk.Label(master=exportActivityLogFrame, text="Search Management Console Activity log and export results.").grid(
@@ -1745,6 +1869,63 @@ ttk.Button(
     text="Back to Main Menu",
     command=goBacktoMainPage,
 ).grid(row=3, column=0, ipadx=10, pady=10)
+
+
+# Export Endpoint Tag IDs Frame #############################
+tk.Label(
+    master=exportEndpointTagsFrame, text="Export Endpoint Tags", font=("Courier", 24)
+).grid(row=0, column=0, padx=20, pady=20)
+tk.Label(
+    master=exportEndpointTagsFrame, text="Exports Endpoint Tag details to CSV for all scopes in Management Console."
+).grid(row=1, column=0, padx=20, pady=2)
+ttk.Button(
+    master=exportEndpointTagsFrame,
+    text="Export",
+    command=exportEndpointTags,
+).grid(row=2, column=0, pady=10)
+ttk.Button(
+    master=exportEndpointTagsFrame,
+    text="Back to Main Menu",
+    command=goBacktoMainPage,
+).grid(row=3, column=0, ipadx=10, pady=10)
+
+
+# Manage Endpoint Tags Frame #############################
+tk.Label(
+    master=manageEndpointTagsFrame, text="Manage Endpoint Tags", font=("Courier", 24)
+).grid(row=0, column=0, columnspan=2, padx=20, pady=20)
+tk.Label(
+    master=manageEndpointTagsFrame, text="Add or Remove Endpoint Tags from Agents.\n\n1. Select Action"
+).grid(row=1, column=0, columnspan=2, pady=2)
+endpointTagsAction = tk.StringVar()
+ttk.Radiobutton(manageEndpointTagsFrame, text="Add Endpoint Tag", variable=endpointTagsAction, value="add").grid(row=2, column=0, padx=10, pady=2, sticky='e')
+ttk.Radiobutton(manageEndpointTagsFrame, text="Remove Endpoint Tag", variable=endpointTagsAction, value="remove").grid(row=2, column=1, padx=10, pady=2, sticky='w')
+tk.Label(
+    master=manageEndpointTagsFrame, text="2. Input Endpoint Tag ID"
+).grid(row=3, column=0, columnspan=2, padx=20, pady=2)
+tagIDEntry = ttk.Entry(master=manageEndpointTagsFrame, width=80)
+tagIDEntry.grid(row=4, column=0, columnspan=2, pady=(2,10))
+tk.Label(
+    master=manageEndpointTagsFrame, text="3. Select a CSV file containing a single column with agent UUIDs"
+).grid(row=5, column=0, columnspan=2, padx=20, pady=2)
+ttk.Button(
+    master=manageEndpointTagsFrame,
+    text="Browse",
+    command=selectCSVFile,
+).grid(row=6, column=0, columnspan=2, pady=10)
+tk.Label(master=manageEndpointTagsFrame, textvariable=inputcsv).grid(
+    row=7, column=0, columnspan=2, pady=10
+)
+ttk.Button(
+    master=manageEndpointTagsFrame,
+    text="Submit",
+    command=partial(manageEndpointTags, endpointTagsAction, tagIDEntry)
+).grid(row=8, column=0, columnspan=2, pady=10)
+ttk.Button(
+    master=manageEndpointTagsFrame,
+    text="Back to Main Menu",
+    command=goBacktoMainPage,
+).grid(row=9, column=0, columnspan=2, ipadx=10, pady=10)
 
 
 def main():

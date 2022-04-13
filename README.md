@@ -25,8 +25,8 @@ The S1 Manager tool is a GUI-based application to assist SentinelOne administrat
 
 ### Download EXE
 To download the latest release:
-- [https://github.com/DylanCS1/s1_manager/releases/download/v2022.0.2/s1_manager-2022.0.2.exe](https://github.com/DylanCS1/s1_manager/releases/download/v2022.0.2/s1_manager-2022.0.2.exe)
-- SHA1: 369A06099B3DEDB0B5C57219BFBB0D2EE2762EE9
+- [https://github.com/DylanCS1/s1_manager/releases/download/v2022.0.3/s1_manager-2022.0.3.exe](https://github.com/DylanCS1/s1_manager/releases/download/v2022.0.3/s1_manager-2022.0.3.exe)
+- SHA1: 92E41CA2F7D60C2E1082ECB46709EAE52F85116A
 
 To download the pre-2022 release:
 - [https://github.com/DylanCS1/s1_manager/raw/main/.COMPILED/s1_manager-1.0.exe](https://github.com/DylanCS1/s1_manager/raw/main/.COMPILED/s1_manager-1.0.exe)
@@ -107,12 +107,13 @@ Search and export the activity log.
 > Search is not Case Sensitive
 
 Process:
-1. Input a FROM and TO date in the format of yyyy-dd-mm
+1. Input a FROM and TO date in the format of yyyy-mm-dd
 2. Input a search term (string)
-3. Click Search, then Export to save the results to CSV
+3. Click Search to see filtered results
+4. Click Export to save all results to CSV
 
 
-### Upgrade Agents from CSV
+### Upgrade Agents
 
 Bulk upgrade agents from a named endpoint list in a CSV file.
 
@@ -131,7 +132,7 @@ Process:
 ![Endpoint Names Example][endpoint-screenshot]
 
 
-### Move Agents from CSV
+### Move Agents
 
 Move the agents listed in the CSV to the target site ID and target group ID.
 > If the target group is dynamic the agent will only be moved into the parent site scope.
@@ -148,11 +149,11 @@ Process:
 > Please see the note above if using Microsoft Excel 
 
 ![Group ID example][group-id-screenshot]  
-2. Create a CSV file containing three columns without headers (refer to requirements above)
+2. Create a CSV file containing three columns without headers (refer to requirements above)  
 ![Example CSV][csv-example-screenshot]
 
 
-### Assign Customer Identifier from CSV
+### Assign Customer Identifier
 
 Easily add a Customer Identifier to Agents from a source CSV of endpoint names.
 
@@ -169,7 +170,7 @@ Process:
 ![Endpoint Names Example][endpoint-screenshot]
 
 
-### Decomission Agents from CSV
+### Decomission Agents
 
 Decommission SentinelOne agents in bulk using a source CSV of endponit names.
 
@@ -184,13 +185,13 @@ Process:
 ![Endpoint Names Example][endpoint-screenshot]
 
 
-### Export all Agents to CSV
+### Export All Endpoints
 
 Export the list of Agents in the SentinelOne console.
 > Management consoles prior to the Rio SP1 release have a lower limit on the number of Agents that can be exported to CSV.
 
 
-### Export Exclusions to CSV
+### Export Exclusions
 
 Export all exclusions from the Account scope.
 
@@ -199,14 +200,39 @@ Export all exclusions from the Account scope.
 <p align="right">(<a href="#top">back to top</a>)</p>
 
 
+### Export Endpoint Tags
+
+Export Endpoint Tag details to CSV for all scopes in Management Console.
+
+
+<p align="right">(<a href="#top">back to top</a>)</p>
+
+
+### Manage Endpoint Tags
+
+Add or Remove Endpoint Tags from Agents.
+
+Process:
+1. Select an action (Add or Remove)
+2. Input the Endpoint Tag ID to add/remove
+3. Select a CSV file containing a single column of agent UUIDs
+
+
+<p align="right">(<a href="#top">back to top</a>)</p>
+
 <!-- ROADMAP -->
 ## Roadmap
 
+Proposed (hopeful) changes to implement in the near future.
+
 - [ ] Add additional features around newer API offerings
+  - [x] Endpoint Tag management
+  - [ ] Allow exporting of Activity Log for all events (current) or filtered events
 - [x] Update dependencies
 - [ ] UI Enhancements
     - [x] Uniformity between panes, buttons, font, etc.
     - [x] Improve color theme
+    - [ ] New logo and executable icon
 - [ ] Implement code styling restraints
 - [ ] Refactor/cleanup code
 
