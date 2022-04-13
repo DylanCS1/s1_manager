@@ -172,7 +172,7 @@ Process:
 
 ### Decomission Agents
 
-Decommission SentinelOne agents in bulk using a source CSV of endponit names.
+Decommission SentinelOne agents in bulk using a source CSV of Endpoint names.
 
 Requirements:
 - A CSV containing the list of endpoints that need to be decomissioned
