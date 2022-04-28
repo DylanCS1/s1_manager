@@ -12,9 +12,11 @@ The S1 Manager tool is a GUI-based application to assist SentinelOne administrat
 
 > This tool requires a SentinelOne Management Console and an API Token for a user with appropriate permissions to run the various API calls. Use of this tool assumes the user has an active license to use the SentinelOne product.
 
+Don't forget to give the project a star if you found it useful!
+
 <div align="center">
 
-[Report Bug or Request Feature][issues-url]
+[Report a Bug or Make a Feature Request][issues-url]
 
 </div>
 
@@ -88,7 +90,7 @@ Export events from Deep Visibility to a CSV based on a Deep Visibility Query ID.
 
 To generate a Deep Visibility query:
 1. Log in to the Management Console
-2. Go to the Deep Visibility Page and create the query. For example: *AgentName Contains "test" AND AgentOS = "windows"*
+2. Go to the Deep Visibility Page and create the query. For example: *EndpointName Contains Anycase "win10" AND EndpointOS = "windows"*
  
 ![Deep Visibility Query][dv-screenshot]
 
@@ -170,9 +172,9 @@ Process:
 ![Endpoint Names Example][endpoint-screenshot]
 
 
-### Decomission Agents
+### Decommission Agents
 
-Decommission SentinelOne agents in bulk using a source CSV of endponit names.
+Decommission SentinelOne agents in bulk using a source CSV of Endpoint names.
 
 Requirements:
 - A CSV containing the list of endpoints that need to be decomissioned
@@ -228,13 +230,24 @@ Proposed (hopeful) changes to implement in the near future.
 - [ ] Add additional features around newer API offerings
   - [x] Endpoint Tag management
   - [ ] Allow exporting of Activity Log for all events (current) or filtered events
+  - [ ] Export Ranger Inventory for Account or Site scope
+  - [ ] Get, Reset, or Update Agent Local Config
+  - [ ] Policy updates to specified scope(s)
+  - [ ] Fetch agent logs
+  - [ ] Export Tasks events
+  - [ ] Export Activity events
+  - [ ] Export Users
 - [x] Update dependencies
+- [ ] Functional improvements
+   - [ ] Implement asyncio
+   - [ ] Consistent logging across all features of tool
+   - [ ] Implement code styling restraints
+   - [ ] Refactor/cleanup code
 - [ ] UI Enhancements
     - [x] Uniformity between panes, buttons, font, etc.
     - [x] Improve color theme
-    - [ ] New logo and executable icon
-- [ ] Implement code styling restraints
-- [ ] Refactor/cleanup code
+    - [ ] New logo
+    - [ ] New executable icon
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
@@ -244,14 +257,15 @@ Proposed (hopeful) changes to implement in the near future.
 
 Contributions are greatly appreciated.
 
-If you have a suggestion that would make this better, please fork the repo and create a pull request. You can also simply open an issue with the tag "enhancement".
-Don't forget to give the project a star if you found it useful! Thanks again!
+If you have a suggestion that would make this better, please fork the repo and create a pull request. You can also simply open an issue with the tag "enhancement". Thanks again!
 
 1. Fork the Project
 2. Create your Feature Branch (`git checkout -b feature/NewFeature`)
 3. Commit your Changes (`git commit -m 'Add some NewFeature'`)
 4. Push to the Branch (`git push origin feature/NewFeature`)
 5. Open a Pull Request
+
+The s1_manager tool should be run through the Python Black code formatter. Reference their documentation for more details: [Black](https://black.readthedocs.io/en/stable/)
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
