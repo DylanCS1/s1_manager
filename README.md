@@ -27,8 +27,8 @@ Don't forget to give the project a star if you found it useful!
 
 ### Download EXE
 To download the latest release:
-- [https://github.com/DylanCS1/s1_manager/releases/download/v2022.0.3/s1_manager-2022.0.3.exe](https://github.com/DylanCS1/s1_manager/releases/download/v2022.0.3/s1_manager-2022.0.3.exe)
-- SHA1: 92E41CA2F7D60C2E1082ECB46709EAE52F85116A
+- [https://github.com/DylanCS1/s1_manager/releases/download/v2022.0.5/s1_manager-2022.0.5.exe](https://github.com/DylanCS1/s1_manager/releases/download/v2022.0.5/s1_manager-2022.0.5.exe)
+- SHA1: 9CEE0AF95C4CCC64B003B1AA66D095A9D38C800C
 
 To download the pre-2022 release:
 - [https://github.com/DylanCS1/s1_manager/raw/main/.COMPILED/s1_manager-1.0.exe](https://github.com/DylanCS1/s1_manager/raw/main/.COMPILED/s1_manager-1.0.exe)
@@ -217,7 +217,19 @@ Add or Remove Endpoint Tags from Agents.
 Process:
 1. Select an action (Add or Remove)
 2. Input the Endpoint Tag ID to add/remove
-3. Select a CSV file containing a single column of agent UUIDs
+3. Select the Agent Identifier Type used in your source CSV (Agent UUID or Endpoint Name)
+4. Select a CSV file containing a single column of agent UUIDs or endpoint names (this should align with your selection in step 3)
+   
+
+<p align="right">(<a href="#top">back to top</a>)</p>
+
+
+### Export Local Config
+
+Export Local Config JSON to a JSON file for all Agent UUIDs in a supplied CSV.
+
+Process:
+1. Select a CSV file containing a single column of agent UUIDs
 
 
 <p align="right">(<a href="#top">back to top</a>)</p>
@@ -231,7 +243,8 @@ Proposed (hopeful) changes to implement in the near future.
   - [x] Endpoint Tag management
   - [ ] Allow exporting of Activity Log for all events (current) or filtered events
   - [ ] Export Ranger Inventory for Account or Site scope
-  - [ ] Get, Reset, or Update Agent Local Config
+  - [x] Export Agent Local Config
+  - [ ] Reset, or Update Agent Local Config
   - [ ] Policy updates to specified scope(s)
   - [ ] Fetch agent logs
   - [ ] Export Tasks events

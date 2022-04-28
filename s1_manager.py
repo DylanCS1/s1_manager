@@ -25,7 +25,7 @@ from xlsxwriter.workbook import Workbook
 import gui
 
 # Consts #############################
-__version__ = "2022.0.3"
+__version__ = "2022.0.5"
 api_version = "v2.1"
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
@@ -36,17 +36,19 @@ window.minsize(900, 700)
 window.tk.call("source", os.path.join(dir_path, ".THEME/forest-dark.tcl")) # https://github.com/rdbende/Forest-ttk-theme
 ttk.Style().theme_use("forest-dark")
 
-loginMenuFrame = tk.Frame()
-mainMenuFrame = tk.Frame()
-exportFromDVFrame = tk.Frame()
-upgradeFromCSVFrame = tk.Frame()
-exportActivityLogFrame = tk.Frame()
-moveAgentsFrame = tk.Frame()
-assignCustomerIdentifierFrame = tk.Frame()
-decomissionAgentsFrame = tk.Frame()
-exportAllAgentsFrame = tk.Frame()
-exportEndpointTagsFrame = tk.Frame()
-manageEndpointTagsFrame = tk.Frame()
+loginMenuFrame = ttk.Frame()
+mainMenuFrame = ttk.Frame()
+exportFromDVFrame = ttk.Frame()
+upgradeFromCSVFrame = ttk.Frame()
+exportActivityLogFrame = ttk.Frame()
+moveAgentsFrame = ttk.Frame()
+assignCustomerIdentifierFrame = ttk.Frame()
+decomissionAgentsFrame = ttk.Frame()
+exportAllAgentsFrame = ttk.Frame()
+exportEndpointTagsFrame = ttk.Frame()
+exportExclusionsFrame = ttk.Frame()
+manageEndpointTagsFrame = ttk.Frame()
+exportLocalConfigFrame = ttk.Frame()
 error = tk.StringVar()
 hostname = tk.StringVar()
 apitoken = tk.StringVar()
@@ -54,7 +56,6 @@ proxy = tk.StringVar()
 inputcsv = tk.StringVar()
 useSSL = tk.BooleanVar()
 useSSL.set(True)
-exportExclusionsFrame = tk.Frame()
 
 
 class TextHandler(logging.Handler):
@@ -1460,13 +1461,13 @@ def exportEndpointTags():
     logger.info(f"Done! Output file is - endpointtagsexport_{timestamp}.csv")
 
 
-def manageEndpointTags(action, tag_id):
+def manageEndpointTags():
     """Add or Remove Endpoint Tags from Agents"""
     st = ScrolledText.ScrolledText(
         master=manageEndpointTagsFrame, state="disabled", height=10
     )
     st.configure(font="TkFixedFont")
-    st.grid(row=10, column=0, columnspan=2, pady=10)
+    st.grid(row=12, column=0, columnspan=2, pady=10)
     text_handler = TextHandler(st)
     logging.basicConfig(
         filename="manageendpointtags.log",
@@ -1476,14 +1477,19 @@ def manageEndpointTags(action, tag_id):
     logger = logging.getLogger()
     logger.addHandler(text_handler)
 
+    id_type = "computerName"
+    if agentIDType.get() == "uuid":
+        id_type = "uuid"
+
     with open(inputcsv.get()) as csv_file:
         csv_reader = csv.reader(csv_file, delimiter=",")
         line_count = 0
+
         for row in csv_reader:
-            logger.info(f"Updating Endpoint Tags for UUID -  {row[0]}")
+            logger.info(f"Updating Endpoint Tags for {row[0]}")
             url = hostname.get() + f"/web/api/{api_version}/agents/actions/manage-tags"
             body = {
-                "filter": {"uuids": row[0]},
+                "filter": {id_type: row[0]},
                 "data": [{"operation": endpointTagsAction.get(),"tagId": tagIDEntry.get()}],
             }
             response = requests.post(
@@ -1495,17 +1501,92 @@ def manageEndpointTags(action, tag_id):
             )
             if response.status_code != 200:
                 logger.error(
-                    f"Failed to update Endpoint Tag for agent UUID {row[0]} Error code: {str(response.status_code)} Description: {str(response.text)}"
+                    f"Failed to update Endpoint Tag for agent {row[0]} Error code: {str(response.status_code)} Description: {str(response.text)}"
                 )
             else:
                 r = response.json()
                 affected_num_of_endpoints = r["data"]["affected"]
                 if affected_num_of_endpoints < 1:
-                    logger.info(f"Endpoint Tag not updated for agent UUID {row[0]}")
+                    logger.info(f"Endpoint Tag not updated for agent {row[0]}")
                 else:
                     logger.info(f"Successfully updated the Endpoint Tag")
             line_count += 1
         logger.info(f"Finished! Processed {line_count} lines.")
+
+
+def exportLocalConfig():
+    st = ScrolledText.ScrolledText(master=exportLocalConfigFrame, state="disabled", height=10)
+    st.configure(font="TkFixedFont")
+    st.grid(row=8, column=0, pady=10)
+    text_handler = TextHandler(st)
+    logging.basicConfig(
+        filename="exportlocalconfig.log",
+        level=logging.INFO,
+        format="%(asctime)s - %(levelname)s - %(message)s",
+    )
+    logger = logging.getLogger()
+    logger.addHandler(text_handler)
+
+    timestamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+    json_file = f'Local_Config_{timestamp}.json'
+
+    with open(inputcsv.get()) as csv_file:
+        csv_reader = csv.reader(csv_file, delimiter=",")
+
+        for row in csv_reader:
+            logger.info(f"Getting Agent ID for Agent UUID: {row[0]}")
+            url = hostname.get() + f"/web/api/{api_version}/agents"
+            agent_id = ""
+            agent_config = ""
+            param = {
+                "uuid": row[0]
+            }
+            response = requests.get(
+                url,
+                params=param,
+                headers=headers,
+                proxies={"http": proxy.get(), "https": proxy.get()},
+                verify=useSSL.get(),
+            )
+            if response.status_code != 200:
+                logger.error(
+                    f"Failed to get details for Agent UUID: {row[0]} Error code: {str(response.status_code)} Description: {str(response.text)}"
+                )
+                continue
+            else:
+                r = response.json()
+                agent_id = r["data"][0]["id"]
+                logger.info(f"Successfully retrieved Agent ID: {agent_id} for Agent UUID: {row[0]}")
+                
+            logger.info(f"Getting Agent Config for Agent ID: {agent_id}")
+            url = hostname.get() + f"/web/api/{api_version}/private/agents/{agent_id}/support-actions/configuration"
+
+            response = requests.get(url,
+                params={},
+                headers=headers,
+                proxies={"http": proxy.get(), "https": proxy.get()},
+                verify=useSSL.get(),
+            )
+            if response.status_code != 200:
+                logger.error(
+                    f"Failed to get local config for Agent ID: {agent_id} Error code: {str(response.status_code)} Description: {str(response.text)}"
+                )
+                continue
+            else:
+                r = response.json()
+                agent_config = r["data"]["configuration"]
+                logger.info(f"Successfully retrieved local config for Agent ID: {agent_id}")
+
+            formatted_data = json.loads(agent_config)
+            with open(json_file, "a+", encoding="utf-8") as f:
+                logger.info(f"Writing local config for {agent_id} to {json_file}")
+                f.write(f"\n{agent_id} - {row[0]}:\n")
+                json.dump(formatted_data, f, indent=4)
+                f.write("\n")
+
+    logger.info(f"Done! Output file is - {json_file}")
+
+    
 
 
 def selectCSVFile():
@@ -1607,12 +1688,19 @@ ttk.Button(
     text="Manage Endpoint Tags",
     command=partial(switchFrames, manageEndpointTagsFrame),
 ).grid(row=5, column=1, sticky="ew", ipady=5, pady=10, padx=(10,20))
-
-
+ttk.Button(
+    master=mainMenuFrame,
+    text="Export Local Config",
+    command=partial(switchFrames, exportLocalConfigFrame),
+).grid(row=6, column=0, sticky="ew", ipady=5, pady=10, padx=(20,10))
+ttk.Button(
+    master=mainMenuFrame,
+    state=tk.DISABLED
+).grid(row=6, column=1, sticky="ew", ipady=5, pady=10, padx=(10,20))
 tk.Label(
     master=mainMenuFrame,
     text="Note: Many of the processes can take a while to run. Be patient."
-).grid(row=6, column=0, columnspan=2, padx=20, pady=20, sticky='s')
+).grid(row=8, column=0, columnspan=2, padx=20, pady=20, sticky='s')
 
 
 # Export from DV Frame #############################
@@ -1898,6 +1986,7 @@ tk.Label(
     master=manageEndpointTagsFrame, text="Add or Remove Endpoint Tags from Agents.\n\n1. Select Action"
 ).grid(row=1, column=0, columnspan=2, pady=2)
 endpointTagsAction = tk.StringVar()
+endpointTagsAction.set("add")
 ttk.Radiobutton(manageEndpointTagsFrame, text="Add Endpoint Tag", variable=endpointTagsAction, value="add").grid(row=2, column=0, padx=10, pady=2, sticky='e')
 ttk.Radiobutton(manageEndpointTagsFrame, text="Remove Endpoint Tag", variable=endpointTagsAction, value="remove").grid(row=2, column=1, padx=10, pady=2, sticky='w')
 tk.Label(
@@ -1906,26 +1995,63 @@ tk.Label(
 tagIDEntry = ttk.Entry(master=manageEndpointTagsFrame, width=80)
 tagIDEntry.grid(row=4, column=0, columnspan=2, pady=(2,10))
 tk.Label(
-    master=manageEndpointTagsFrame, text="3. Select a CSV file containing a single column with agent UUIDs"
+    master=manageEndpointTagsFrame, text="3. Select Agent Identifier type. This should align with your source CSV."
 ).grid(row=5, column=0, columnspan=2, padx=20, pady=2)
+agentIDType = tk.StringVar()
+agentIDType.set("add")
+ttk.Radiobutton(manageEndpointTagsFrame, text="Agent UUID", variable=agentIDType, value="uuid").grid(row=6, column=0, padx=10, pady=2, sticky='e')
+ttk.Radiobutton(manageEndpointTagsFrame, text="Endpoint Name", variable=agentIDType, value="name").grid(row=6, column=1, padx=10, pady=2, sticky='w')
+tk.Label(
+    master=manageEndpointTagsFrame, text="4. Select a CSV file containing a single column of values (uuids or endpoint names)"
+).grid(row=7, column=0, columnspan=2, padx=20, pady=2)
 ttk.Button(
     master=manageEndpointTagsFrame,
     text="Browse",
     command=selectCSVFile,
-).grid(row=6, column=0, columnspan=2, pady=10)
+).grid(row=8, column=0, columnspan=2, pady=10)
 tk.Label(master=manageEndpointTagsFrame, textvariable=inputcsv).grid(
-    row=7, column=0, columnspan=2, pady=10
+    row=9, column=0, columnspan=2, pady=10
 )
 ttk.Button(
     master=manageEndpointTagsFrame,
     text="Submit",
-    command=partial(manageEndpointTags, endpointTagsAction, tagIDEntry)
-).grid(row=8, column=0, columnspan=2, pady=10)
+    command=partial(manageEndpointTags)
+).grid(row=10, column=0, columnspan=2, pady=10)
 ttk.Button(
     master=manageEndpointTagsFrame,
     text="Back to Main Menu",
     command=goBacktoMainPage,
-).grid(row=9, column=0, columnspan=2, ipadx=10, pady=10)
+).grid(row=11, column=0, columnspan=2, ipadx=10, pady=10)
+
+
+# Export Agent Local Config Frame #############################
+tk.Label(
+    master=exportLocalConfigFrame, text="Export Local Config", font=("Courier", 24)
+).grid(row=0, column=0, padx=20, pady=20)
+tk.Label(
+    master=exportLocalConfigFrame, text="Exports the local agent configuration to a single JSON file for all agents in a supplied CSV list"
+).grid(row=1, column=0, padx=20, pady=2)
+tk.Label(
+    master=exportLocalConfigFrame, text="1. Select a CSV file containing a single column of agent UUIDs"
+).grid(row=2, column=0, columnspan=2, padx=20, pady=2)
+ttk.Button(
+    master=exportLocalConfigFrame,
+    text="Browse",
+    command=selectCSVFile,
+).grid(row=3, column=0, columnspan=2, pady=10)
+tk.Label(master=exportLocalConfigFrame, textvariable=inputcsv).grid(
+    row=4, column=0, columnspan=2, pady=10
+)
+ttk.Button(
+    master=exportLocalConfigFrame,
+    text="Export",
+    command=exportLocalConfig,
+).grid(row=5, column=0, pady=10)
+ttk.Button(
+    master=exportLocalConfigFrame,
+    text="Back to Main Menu",
+    command=goBacktoMainPage,
+).grid(row=6, column=0, ipadx=10, pady=10)
 
 
 def main():
