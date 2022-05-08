@@ -5,7 +5,8 @@ block_cipher = None
 
 added_files = [
     ( '.THEME\\forest-dark.tcl', '.THEME' ),
-    ('.THEME\\forest-dark\\*.png', '.THEME\\forest-dark' )
+    ('.THEME\\forest-dark\\*.png', '.THEME\\forest-dark' ),
+    ('.ICO\\s1_manager.*', '.ICO')
 ]
 
 a = Analysis(['s1_manager.py'],
@@ -20,7 +21,8 @@ a = Analysis(['s1_manager.py'],
              win_no_prefer_redirects=False,
              win_private_assemblies=False,
              cipher=block_cipher,
-             noarchive=False)
+             noarchive=False
+             )
 pyz = PYZ(a.pure, a.zipped_data,
              cipher=block_cipher)
 
@@ -38,6 +40,7 @@ exe = EXE(pyz,
           upx_exclude=[],
           runtime_tmpdir=None,
           console=False,
+          icon='.ICO\\s1_manager.ico',
           disable_windowed_traceback=False,
           target_arch=None,
           codesign_identity=None,
