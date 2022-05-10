@@ -22,7 +22,7 @@ The S1 Manager tool is a GUI-based application to assist SentinelOne administrat
 
 <!-- GETTING STARTED -->
 ## Getting Started
-
+---
 ### Download EXE
 To download the latest release:
 - [https://github.com/DylanCS1/s1_manager/releases/download/v2022.1.1/s1_manager-2022.1.1.exe](https://github.com/DylanCS1/s1_manager/releases/download/v2022.1.1/s1_manager-2022.1.1.exe)
@@ -68,7 +68,7 @@ To get a local copy up and running follow these simple steps:
 
 <!-- USAGE EXAMPLES -->
 ## Usage
-
+---
 Presently, everything in the S1 Manager tool runs on a single thread so when executing a task the GUI will appear to be "dead" (GUI cannot accept new events). You will just need to be patient :)  
 
 > The permissions assigned to the user associated with the API Token define what actions can be performed, and at what scope.
@@ -84,7 +84,7 @@ Presently, everything in the S1 Manager tool runs on a single thread so when exe
 ![Login][login-view]
 
 ## Available Export Operations
-
+---
 ### Export Deep Visibility Events
 
 Export events from Deep Visibility to an XLSX based on a Deep Visibility Query ID. Multiple datapoints are temporarily written to CSVs which then get combined into a single XLSX, one CSV per worksheet in the XLSX.
@@ -104,31 +104,29 @@ To generate a Deep Visibility query:
 
 ![Developer Tools example][dev-tools-screenshot]
 
-<p align="right">(<a href="#top">back to top</a>)</p>
 
 
 ### Export Activity Log
 
 Search and Export the Activity log.
-> Currently, the exported results are contrained by the FROM and TO dates, not the search term. To see search results, refer to the s1_manager.log 
+> Currently, the exported results are constrained by the FROM and TO dates, not the search term. To see search results more clearly, refer to the s1_manager.log 
+
+
 > This can take a very long time depending on the number of events to fetch. If 10,000 or fewer entries are needed, it is recommended instead to export to CSV from the Management Console as that is much faster.
 
 Process:
 1. Input a **FROM** and **TO** date in the format of *yyyy-mm-dd*
-2. Input a search term (string)
-> Search is not Case Sensitive.  
+2. Input a search term (string). **Note:** Search is not Case Sensitive.  
 3. Click **Search** to see filtered results
 4. Click **Export** to save all Activity results for the given timeframe to CSV
 
-<p align="right">(<a href="#top">back to top</a>)</p>
 
 
 ### Export Endpoints
 
 Export Endpoint details in the SentinelOne console to CSV or XLSX.
-> This can take a very long time if there are in excess of 10,000 endpoints. It is recommended instead to export to CSV from the Management Console, as that is much faster and can handle up to 300,000 endpoints.
+> This can take a very long time, especially if there are more than 10,000 endpoints to export. Instead, it is recommended to export the CSV from the Management Console, as that is much faster and can handle up to 300,000 endpoints.
 
-<p align="right">(<a href="#top">back to top</a>)</p>
 
 
 ### Export Exclusions
@@ -138,14 +136,11 @@ Export all exclusions from the Account scope.
 
 ![Exclusion CSV Example][exclusion-screenshot]
 
-<p align="right">(<a href="#top">back to top</a>)</p>
 
 
 ### Export Endpoint Tags
 
 Export Endpoint Tag details to CSV for all scopes in Management Console.
-
-<p align="right">(<a href="#top">back to top</a>)</p>
 
 
 ### Export Local Config
@@ -155,14 +150,10 @@ Export Agent local configuration(s) to a single JSON file for all Agent UUIDs in
 Process:
 1. Select a CSV file containing a single column of agent UUIDs
 
-<p align="right">(<a href="#top">back to top</a>)</p>
-
 
 ### Export Users
 
 Export Management Console user details to a CSV or XLSX file.
-
-<p align="right">(<a href="#top">back to top</a>)</p>
 
 
 ### Export Ranger Inventory
@@ -180,7 +171,7 @@ Process:
 
 
 ## Available Manage Operations
-
+---
 ### Upgrade Agents
 
 Bulk upgrade agents from a named endpoint list in a CSV file.
@@ -201,8 +192,6 @@ Process:
 Example of CSV:  
 ![Endpoint Names Example][endpoint-screenshot]  
 
-
-<p align="right">(<a href="#top">back to top</a>)</p>
 
 
 ### Move Agents
@@ -225,7 +214,6 @@ Process:
 2. Create a CSV file containing three columns without headers (refer to requirements above)  
 ![Example CSV][csv-example-screenshot]
 
-<p align="right">(<a href="#top">back to top</a>)</p>
 
 
 ### Assign Customer Identifier
@@ -244,7 +232,6 @@ Process:
 
 ![Endpoint Names Example][endpoint-screenshot]
 
-<p align="right">(<a href="#top">back to top</a>)</p>
 
 
 ### Decommission Agents
@@ -261,7 +248,6 @@ Process:
 
 ![Endpoint Names Example][endpoint-screenshot]
 
-<p align="right">(<a href="#top">back to top</a>)</p>
 
 
 ### Manage Endpoint Tags
@@ -279,7 +265,7 @@ Process:
 
 <!-- ROADMAP -->
 ## Roadmap
-
+---
 Proposed (hopeful) changes to implement in the near future.
 
 - [ ] Add additional features around newer API offerings
@@ -308,7 +294,7 @@ Proposed (hopeful) changes to implement in the near future.
 
 <!-- CONTRIBUTING -->
 ## Contributing
-
+---
 Contributions are greatly appreciated.
 
 If you have a suggestion that would make this better, please fork the repo and create a pull request. You can also simply open an issue with the tag "enhancement". Thanks again!
@@ -321,12 +307,10 @@ If you have a suggestion that would make this better, please fork the repo and c
 
 The s1_manager tool should be run through the Python Black code formatter. Reference their documentation for more details: [Black](https://black.readthedocs.io/en/stable/)
 
-<p align="right">(<a href="#top">back to top</a>)</p>
-
 
 <!-- ISSUES -->
 ## Reporting Issues
-
+---
 If you observe any issues using the S1 Manager tool, please check if this issue is already documented by checking the [issues][issues-url] page. If not, then fill out a new issue providing as much detail as possible including any inputs, observed behavior/errors in the UI, etc. Additionally, if you launch the S1 Manager tool with `--debug` argument, verbose logging is generated which may assist in troubleshooting. If you can easily replicate the issue please do so with debug logging enabled and provide the log file.  
 > **Important Note:** The debug logging is quite verbose and can include tens of thousands of lines. Additionally, your API Token will be displayed in plaintext so this should not be used except for troubleshooting. When done, the **s1_manager_debug** log should be properly purged from your file system.
 
@@ -338,22 +322,18 @@ OR
 s1_manager.exe --debug
 ```
 
-<p align="right">(<a href="#top">back to top</a>)</p>
-
 
 <!-- LICENSE -->
 ## License
-
+---
 Distributed under the MIT License. See [LICENSE.txt][license-url] for more information.
 
 SentinelOne and the SentinelOne logomark are &trade; of [SentinelOne](https://www.sentinelone.com/legal/tm-guidelines/ "SentinelOne Trademark").
 
-<p align="right">(<a href="#top">back to top</a>)</p>
-
 
 <!-- ACKNOWLEDGEMENTS -->
 ## Acknowledgements
-
+---
 A huge thank you to the following individuals for starting the S1 Manager tool project:
 - [guysentinel](https://github.com/guysentinel "guysentinel")
 - [tomerbsentinel](https://github.com/tomerbsentinel "tomerbsentinel")
