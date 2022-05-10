@@ -137,4 +137,4 @@ dmypy.json
 *.zip
 *.bak
 *.json
-/.TEST
+/.IGNORE

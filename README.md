@@ -25,8 +25,8 @@ The S1 Manager tool is a GUI-based application to assist SentinelOne administrat
 
 ### Download EXE
 To download the latest release:
-- [https://github.com/DylanCS1/s1_manager/releases/download/v2022.1.0/s1_manager-2022.1.0.exe](https://github.com/DylanCS1/s1_manager/releases/download/v2022.1.0/s1_manager-2022.1.0.exe)
-- SHA1: 8FA6B0F480B95705C24427C73447846EE75E93A3
+- [https://github.com/DylanCS1/s1_manager/releases/download/v2022.1.1/s1_manager-2022.1.1.exe](https://github.com/DylanCS1/s1_manager/releases/download/v2022.1.1/s1_manager-2022.1.1.exe)
+- SHA1: 76BD55DBC2F4CABB1F5066ABB1D82342A9043AB2
 
 To download the pre-2022 release:
 - [https://github.com/DylanCS1/s1_manager/raw/main/.COMPILED/s1_manager-1.0.exe](https://github.com/DylanCS1/s1_manager/raw/main/.COMPILED/s1_manager-1.0.exe)
@@ -75,11 +75,13 @@ Presently, everything in the S1 Manager tool runs on a single thread so when exe
 
 ### Login:
 
-1. Input your SentinelOne Management Console address (e.g., https://abc-corp.sentinelone.net)
-2. Input your user account API Token
+1. Input your **SentinelOne Management Console** address (e.g., https://abc-corp.sentinelone.net)
+2. Input your user account **API Token**
 3. Add proxy address details (if needed) 
 4. If using an On-Prem console with a self-signed certificate you will need to uncheck the **Use SSL** option
-5. Click *Submit*
+5. Click **Submit**
+
+![Login][login-view]
 
 ## Available Export Operations
 
@@ -94,10 +96,11 @@ To generate a Deep Visibility query:
 ![Deep Visibility Query][dv-screenshot]
 
 
-3. Open your web browser's Developer Tools (```F12 or CTRL+SHIFT+i```)
-4. Open the Network tab 
+3. Open your web browser's **Developer Tools** (```F12 or CTRL+SHIFT+i```)
+4. Open the **Network** tab 
 5. Run the query in the Management Console
-6. Click on init-query and copy your `queryID`
+6. Click on **'query-streaming-status'**, **'count-by-type'**, or **'all-events'**
+7. Open the Payload view to find and copy your **queryID**
 
 ![Developer Tools example][dev-tools-screenshot]
 
@@ -107,21 +110,23 @@ To generate a Deep Visibility query:
 ### Export Activity Log
 
 Search and Export the Activity log.
-> Search is not Case Sensitive
-> Exported results are contrained by the FROM and TO dates, but not the search term.
+> Currently, the exported results are contrained by the FROM and TO dates, not the search term. To see search results, refer to the s1_manager.log 
+> This can take a very long time depending on the number of events to fetch. If 10,000 or fewer entries are needed, it is recommended instead to export to CSV from the Management Console as that is much faster.
 
 Process:
-1. Input a FROM and TO date in the format of yyyy-mm-dd
+1. Input a **FROM** and **TO** date in the format of *yyyy-mm-dd*
 2. Input a search term (string)
-3. Click Search to see filtered results
-4. Click Export to save all results to CSV
+> Search is not Case Sensitive.  
+3. Click **Search** to see filtered results
+4. Click **Export** to save all Activity results for the given timeframe to CSV
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
 
 ### Export Endpoints
 
-Export the list of Agents in the SentinelOne console to CSV or XLSX.
+Export Endpoint details in the SentinelOne console to CSV or XLSX.
+> This can take a very long time if there are in excess of 10,000 endpoints. It is recommended instead to export to CSV from the Management Console, as that is much faster and can handle up to 300,000 endpoints.
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
@@ -167,7 +172,7 @@ Export Ranger Inventory details to CSV.
 > If processing multiple Accounts or Sites, one CSV per ID will be created
 
 Process:
-1. Select which scope to export Ranger Inventory from: Account or Site
+1. Select which scope to export Ranger Inventory from: **Account** or **Site**
 2. Select a CSV containing a single column of Account or Site IDs to process
 3. Pick a time period for data export
 
@@ -189,7 +194,7 @@ Process:
 1. Export the Packages List and get the relevant Package ID
 > If you are using Microsoft Excel, make sure the ID cell is formatted as Text when imported, otherwise, some of the digits might be changed to zeros
 > [https://support.microsoft.com/en-us/help/269370/last-digits-are-changed-to-zeroes-when-you-type-long-numbers-in-cells](https://support.microsoft.com/en-us/help/269370/last-digits-are-changed-to-zeroes-when-you-type-long-numbers-in-cells)
-2. Insert the package ID
+2. Insert the package ID to use for upgrade.
 3. Select a CSV containing a single column of endpoint names to be upgraded.
 4. Toggle the 'Use Schedule' switch on if you want the upgrade to occur per the defined schedule in the Console.
 
@@ -264,9 +269,9 @@ Process:
 Add or Remove Endpoint Tags from Agents.
 
 Process:
-1. Select an action (Add or Remove)
-2. Input the Endpoint Tag ID to add/remove
-3. Select the Agent Identifier Type used in your source CSV (Agent UUID or Endpoint Name)
+1. Select an action: **Add** or **Remove**
+2. Input the **Endpoint Tag ID** to add/remove
+3. Select the **Agent Identifier Type** used in your source CSV (Agent UUID or Endpoint Name)
 4. Select a CSV file containing a single column of agent UUIDs or endpoint names (this should align with your selection in step 3)
 
 <p align="right">(<a href="#top">back to top</a>)</p>
@@ -322,8 +327,8 @@ The s1_manager tool should be run through the Python Black code formatter. Refer
 <!-- ISSUES -->
 ## Reporting Issues
 
-If you observe any issues using the S1 Manager tool, please check if this issue is already documented by checking the [issues][issues-url] page. If not, then fill out a new issue providing as much detail as possible. Additionally, if you launch the S1 Manager tool with `--debug` argument, verbose logging is generated which may assist in troubleshooting.  
-> **Important Note:** The debug logging is quite verbose and can include tens of thousands of lines. Additionally, your API Token will be displayed in plaintext so this should not be used except for troubleshooting. When done, the log should be properly purged from your file system.
+If you observe any issues using the S1 Manager tool, please check if this issue is already documented by checking the [issues][issues-url] page. If not, then fill out a new issue providing as much detail as possible including any inputs, observed behavior/errors in the UI, etc. Additionally, if you launch the S1 Manager tool with `--debug` argument, verbose logging is generated which may assist in troubleshooting. If you can easily replicate the issue please do so with debug logging enabled and provide the log file.  
+> **Important Note:** The debug logging is quite verbose and can include tens of thousands of lines. Additionally, your API Token will be displayed in plaintext so this should not be used except for troubleshooting. When done, the **s1_manager_debug** log should be properly purged from your file system.
 
 ```sh
 python s1_manager.py --debug
@@ -376,6 +381,7 @@ And to the following resources:
 
 <!-- Images -->
 [product-screenshot]: .README/product_screenshot.png "S1 Manager Screenshot"
+[login-view]: .README/login_view.png "Login"
 [dv-screenshot]: .README/dv_query.png "Deep Visibility Query"
 [exclusion-screenshot]: .README/exclusion_export.png "Example Exclusion CSV"
 [endpoint-screenshot]: .README/endpoint_names.png "CSV Endpoint Names example"

@@ -19,23 +19,23 @@ from functools import partial
 from tkinter import UNDERLINE, ttk
 
 import aiohttp
-import pandas as pd
 import requests
 from PIL import Image, ImageTk
 from xlsxwriter.workbook import Workbook
 
 # CONSTS
-__version__ = "2022.1.0"
+__version__ = "2022.1.1"
 api_version = "v2.1"
 dir_path = os.path.dirname(os.path.realpath(__file__))
 query_limits = "limit=1000"
 
 # LOG SETTINGS
-LOG_NAME = f"s1_manager_{datetime.datetime.now().strftime('%Y-%m-%d')}.log"
 if len(sys.argv) > 1 and sys.argv[1] == "--debug":
     LOG_LEVEL = logging.DEBUG
+    LOG_NAME = f"s1_manager_debug_{datetime.datetime.now().strftime('%Y-%m-%d')}.log"
 else:
     LOG_LEVEL = logging.INFO
+    LOG_NAME = f"s1_manager_{datetime.datetime.now().strftime('%Y-%m-%d')}.log"
 if LOG_LEVEL == logging.DEBUG:
     LOG_FORMAT = "%(asctime)s - %(levelname)s - %(funcName)s:%(lineno)s - %(message)s"
 else:
@@ -58,6 +58,7 @@ frame_subtitle_font_underline = ("Arial", 14, UNDERLINE)
 frame_subtitle_font = ("Arial", 12)
 frame_subnote_font = ("Arial", 10)
 frame_note_fg_color = "red"
+st_font = "TkFixedFont"
 
 # FRAME CONSTS
 loginMenuFrame = ttk.Frame()
@@ -186,6 +187,7 @@ def goBacktoMainPage():
 
 def switchFrames(framename):
     """Function to handle switching tkinter frames"""
+    inputcsv.set("")
     mainMenuFrame.pack_forget()
     framename.pack()
 
@@ -195,7 +197,7 @@ def exportFromDV():
     st = ScrolledText.ScrolledText(
         master=exportFromDVFrame, state="disabled", height=10
     )
-    st.configure(font="TkFixedFont")
+    st.configure(font=st_font)
     st.grid(row=13, column=0, pady=10)
     text_handler = TextHandler(st)
     logging.basicConfig(
@@ -441,8 +443,8 @@ def exportFromDV():
             asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
         asyncio.run(run(hostname.get(), dv_query_id, apitoken.get(), proxy.get()))
         xlsx_filename = "-"
-        xlsx_filename = xlsx_filename.join(dv_query_id)
-        workbook = Workbook(xlsx_filename + ".xlsx")
+        xlsx_filename = f"DV_Export_{xlsx_filename.join(dv_query_id)}.xlsx"
+        workbook = Workbook(xlsx_filename)
         csvs = [
             dv_file,
             dv_ip,
@@ -464,7 +466,7 @@ def exportFromDV():
                 logger.debug("Deleting %s", csvfile)
                 os.remove(csvfile)
         workbook.close()
-        logger.info("Done! Created the file %s", xlsx_filename)
+        logger.info("Done! Created the file %s\n", xlsx_filename)
     else:
         logger.error("Please enter a valid DV Query ID and try again.", dv_query_id)
 
@@ -474,7 +476,7 @@ def exportActivityLog(searchOnly):
     st = ScrolledText.ScrolledText(
         master=exportActivityLogFrame, state="disabled", height=10
     )
-    st.configure(font="TkFixedFont")
+    st.configure(font=st_font)
     st.grid(row=13, column=0, pady=10)
     text_handler = TextHandler(st)
     logging.basicConfig(
@@ -500,8 +502,9 @@ def exportActivityLog(searchOnly):
             hostname.get()
             + f"/web/api/{api_version}/activities?{query_limits}&createdAt__between={fromdate_epoch}-{todate_epoch}&countOnly=false&includeHidden=false"
         )
-        logger.debug("Search Only: %s", searchOnly)
+        logger.debug("Search only state: %s", searchOnly)
         if searchOnly:
+            logger.info("Starting search for '%s'", stringSearchEntry.get())
             while url:
                 response = requests.get(
                     url,
@@ -558,8 +561,9 @@ def exportActivityLog(searchOnly):
                         logger.debug("No cursor found, setting URL to None")
                         url = None
         else:
-            datestamp = datetime.datetime.now().strftime("%Y-%m-%d")
+            datestamp = datetime.datetime.now().strftime("%Y-%m-%d_%f")
             csv_filename = f"Activity_Log_Export_{datestamp}.csv"
+            logger.info("Creating and opening %s", csv_filename)
             f = csv.writer(
                 open(
                     csv_filename,
@@ -599,12 +603,22 @@ def exportActivityLog(searchOnly):
                             tmp = []
                             for key, value in data[0].items():
                                 tmp.append(key)
+                            logger.debug("Writing column headers on first run.")
                             f.writerow(tmp)
+                            logger.debug(
+                                "First run through the data set complete, setting firstrun to False"
+                            )
                             firstrun = False
                         for item in data:
                             tmp = []
                             for key, value in item.items():
                                 tmp.append(value)
+                            logger.debug(
+                                "Writing entry to CSV: %s - %s - %s",
+                                item["createdAt"],
+                                item["primaryDescription"],
+                                item["secondaryDescription"],
+                            )
                             f.writerow(tmp)
                     if cursor:
                         paramsnext = f"/web/api/{api_version}/activities?{query_limits}&createdAt__between={fromdate_epoch}-{todate_epoch}&countOnly=false&cursor={cursor}&includeHidden=false"
@@ -613,7 +627,7 @@ def exportActivityLog(searchOnly):
                     else:
                         logger.debug("No cursor found, setting URL to None")
                         url = None
-            logger.info("Done! Output file is - %s", csv_filename)
+            logger.info("Done! Output file is - %s\n", csv_filename)
     else:
         logger.error("You must state a FROM date and a TO date")
 
@@ -623,7 +637,7 @@ def upgradeFromCSV(justPackages):
     st = ScrolledText.ScrolledText(
         master=upgradeFromCSVFrame, state="disabled", height=10
     )
-    st.configure(font="TkFixedFont")
+    st.configure(font=st_font)
     st.grid(row=13, column=0, pady=10)
     text_handler = TextHandler(st)
     logging.basicConfig(
@@ -633,7 +647,9 @@ def upgradeFromCSV(justPackages):
     )
     logger = logging.getLogger()
     logger.addHandler(text_handler)
-    csv_filename = "Available_Packages_List.csv"
+
+    datestamp = datetime.datetime.now().strftime("%Y-%m-%d_%f")
+    csv_filename = f"Available_Packages_List_{datestamp}.csv"
 
     logger.debug("Just packages set to: %s", justPackages)
     if justPackages:
@@ -700,12 +716,13 @@ def upgradeFromCSV(justPackages):
                 else:
                     logger.debug("No cursor found, setting URL to None")
                     url = None
-        logger.info("Printed packages list into %s", csv_filename)
+        logger.info("SentinelOne agent packages list written to: %s", csv_filename)
     else:
         with open(inputcsv.get()) as csv_file:
             logger.debug("Reading CSV: %s", inputcsv.get())
             csv_reader = csv.reader(csv_file, delimiter=",")
             line_count = 0
+            logger.debug("Use Schedule value: %s", useSchedule.get())
             for row in csv_reader:
                 logger.info("Upgrading endpoint named - %s", row[0])
                 url = (
@@ -746,6 +763,10 @@ def upgradeFromCSV(justPackages):
                     logger.info(
                         "Sent upgrade command to %s endpoints", data["data"]["affected"]
                     )
+                    if useSchedule.get():
+                        logger.info(
+                            "Upgrade should follow schedule defined in Management Console."
+                        )
                 line_count += 1
             if line_count < 1:
                 logger.info("Finished! Input file %s was empty.", inputcsv.get())
@@ -756,7 +777,7 @@ def upgradeFromCSV(justPackages):
 def moveAgents(justGroups):
     """Function to move Agents using API"""
     st = ScrolledText.ScrolledText(master=moveAgentsFrame, state="disabled", height=10)
-    st.configure(font="TkFixedFont")
+    st.configure(font=st_font)
     st.grid(row=13, column=0, pady=10)
     text_handler = TextHandler(st)
     logging.basicConfig(
@@ -894,7 +915,7 @@ def assignCustomerIdentifier():
     st = ScrolledText.ScrolledText(
         master=assignCustomerIdentifierFrame, state="disabled", height=10
     )
-    st.configure(font="TkFixedFont")
+    st.configure(font=st_font)
     st.grid(row=13, column=0, pady=10)
     text_handler = TextHandler(st)
     logging.basicConfig(
@@ -965,7 +986,7 @@ def exportAllAgents():
     st = ScrolledText.ScrolledText(
         master=exportEndpointsFrame, state="disabled", height=10
     )
-    st.configure(font="TkFixedFont")
+    st.configure(font=st_font)
     st.grid(row=13, column=0, columnspan=2, pady=10)
     text_handler = TextHandler(st)
     logging.basicConfig(
@@ -976,18 +997,19 @@ def exportAllAgents():
     logger = logging.getLogger()
     logger.addHandler(text_handler)
 
-    datestamp = datetime.datetime.now().strftime("%Y-%m-%d")
-    logger.debug("User selected %s file type", userOutputType.get())
-    if endpointOutputType.get() == "csv":
-        output_file = f"Endpoint_Export_{datestamp}.csv"
-    else:
-        output_file = f"Endpoint_Export_{datestamp}.xlsx"
+    datestamp = datetime.datetime.now().strftime("%Y-%m-%d_%f")
+    logger.debug("User selected %s file type", endpointOutputType.get())
+    output_file_name = f"Export_Endpoints_{datestamp}"
+    csv_file = output_file_name + ".csv"
+    xlsx_file = output_file_name + ".xlsx"
 
     firstrun = True
     url = (
         hostname.get()
         + f"/web/api/{api_version}/agents?{query_limits}&sortBy=computerName&sortOrder=asc"
     )
+
+    logger.info("Starting to request endpoint data.")
     while url:
         response = requests.get(
             url,
@@ -1012,184 +1034,35 @@ def exportAllAgents():
         else:
             data = response.json()
             cursor = data["pagination"]["nextCursor"]
+            total_endpoints = data["pagination"]["totalItems"]
             data = data["data"]
-            if data and endpointOutputType.get() == "csv":
-                logger.debug("Writing endpoint data to %s", output_file)
-                f = csv.writer(open(output_file, "a+", newline="", encoding="utf-8"))
-                if firstrun:
-                    tmp = []
-                    for key, value in data[0].items():
-                        tmp.append(key)
-                    f.writerow(tmp)
-                    firstrun = False
-                for item in data:
-                    tmp = []
-                    for key, value in item.items():
-                        tmp.append(value)
-                    f.writerow(tmp)
-            elif data and endpointOutputType.get() == "xlsx":
-                df_json = pd.DataFrame(data)
-                df_json.rename(
-                    columns={
-                        "accountId": "Account ID",
-                        "accountName": "Account Name",
-                        "activeDirectory": "Active Directory",
-                        "activeThreats": "Active Threats",
-                        "agentVersion": "Agent Version",
-                        "allowRemoteShell": "Allow Remote Shell?",
-                        "appsVulnerabilityStatus": "Apps Vulnerability Status",
-                        "cloudProviders": "Cloud Providers",
-                        "computerName": "Computer Name",
-                        "consoleMigrationStatus": "Console Migration Status",
-                        "coreCount": "Core Count",
-                        "cpuCount": "CPU Count",
-                        "cpuId": "CPU ID",
-                        "createdAt": "Created At",
-                        "detectionState": "Detection State",
-                        "domain": "Domain",
-                        "encryptedApplications": "Encrypted Applications",
-                        "externalId": "External ID",
-                        "externalIp": "External IP",
-                        "firewallEnabled": "Firewall Enabled",
-                        "firstFullModeTime": "First Full Mode Time",
-                        "groupId": "Group ID",
-                        "groupIp": "Group IP",
-                        "groupName": "Group Name",
-                        "id": "Agent ID",
-                        "inRemoteShellSession": "In Remote Shell Session?",
-                        "infected": "Infected?",
-                        "installerType": "Installer Type",
-                        "isActive": "Is Active?",
-                        "isDecommissioned": "Is Decommissioned?",
-                        "isPendingUninstall": "Is Pending Uninstall?",
-                        "isUninstalled": "Is Uninstalled?",
-                        "isUpToDate": "Is UpToDate?",
-                        "lastActiveDate": "Last Active Date",
-                        "lastIpToMgmt": "Last IP to Management",
-                        "lastLoggedInUserName": "Last Logged In Username",
-                        "licenseKey": "License Key",
-                        "locationEnabled": "Location Enabled",
-                        "locationType": "Location Type",
-                        "locations": "Locations",
-                        "machineType": "Machine Type",
-                        "mitigationMode": "Mitigation Mode",
-                        "mitigationModeSuspicious": "Mitigation Mode Suspicious",
-                        "modelName": "Model Name",
-                        "networkInterfaces": "Network Interfaces",
-                        "networkQuarantineEnabled": "Network Quarantine Enabled",
-                        "networkStatus": "Network Status",
-                        "operationalState": "Operational State",
-                        "operationalStateExpiration": "Operational State Expiration",
-                        "osArch": "OS Architecture",
-                        "osName": "OS Name",
-                        "osRevision": "OS Revision",
-                        "osStartTime": "OS Start Time",
-                        "osType": "OS Type",
-                        "osUsername": "OS Username",
-                        "rangerStatus": "Ranger Status",
-                        "rangerVersion": "Ranger Version",
-                        "registeredAt": "Registered At",
-                        "remoteProfilingState": "Remote Profiling State",
-                        "remoteProfilingStateExpiration": "Remote Profiling State Expiration",
-                        "scanAbortedAt": "Scan Aborted At",
-                        "scanFinishedAt": "Scan Finished At",
-                        "scanStartedAt": "Scan Started At",
-                        "scanStatus": "Scan Status",
-                        "serialNumber": "Serial Number",
-                        "siteId": "Site ID",
-                        "siteName": "Site Name",
-                        "storageName": "Storage Name",
-                        "storageType": "Storage Type",
-                        "tags": "Tags",
-                        "threatRebootRequired": "Threat Reboot Required?",
-                        "totalMemory": "Total Memory",
-                        "updatedAt": "Updated At",
-                        "userActionsNeeded": "User Actions Needed",
-                        "uuid": "Agent UUID",
-                    },
-                    inplace=True,
+
+            logger.debug(
+                "%s total endpoints in data. Opening %s to start writing",
+                total_endpoints,
+                csv_file,
+            )
+            f = csv.writer(open(csv_file, "a+", newline="", encoding="utf-8"))
+            if firstrun:
+                tmp = []
+                for key, value in data[0].items():
+                    tmp.append(key)
+                logger.debug(
+                    "Writing column headers to first row: %s",
+                    tmp,
                 )
-                df_json = df_json[
-                    [
-                        "Computer Name",
-                        "Agent UUID",
-                        "Agent ID",
-                        "Agent Version",
-                        "Account Name",
-                        "Account ID",
-                        "Site Name",
-                        "Site ID",
-                        "Group Name",
-                        "Group ID",
-                        "OS Name",
-                        "OS Type",
-                        "Last Active Date",
-                        "Last IP to Management",
-                        "Last Logged In Username",
-                        "Operational State",
-                        "Operational State Expiration",
-                        "Infected?",
-                        "Threat Reboot Required?",
-                        "Detection State",
-                        "Active Directory",
-                        "Active Threats",
-                        "Allow Remote Shell?",
-                        "Apps Vulnerability Status",
-                        "Cloud Providers",
-                        "Console Migration Status",
-                        "Core Count",
-                        "CPU Count",
-                        "CPU ID",
-                        "Created At",
-                        "Domain",
-                        "Encrypted Applications",
-                        "External ID",
-                        "External IP",
-                        "Firewall Enabled",
-                        "First Full Mode Time",
-                        "Group IP",
-                        "In Remote Shell Session?",
-                        "Installer Type",
-                        "Is Active?",
-                        "Is Decommissioned?",
-                        "Is Pending Uninstall?",
-                        "Is Uninstalled?",
-                        "Is UpToDate?",
-                        "License Key",
-                        "Location Enabled",
-                        "Location Type",
-                        "Locations",
-                        "Machine Type",
-                        "Mitigation Mode",
-                        "Mitigation Mode Suspicious",
-                        "Model Name",
-                        "Network Interfaces",
-                        "Network Quarantine Enabled",
-                        "Network Status",
-                        "OS Architecture",
-                        "OS Revision",
-                        "OS Start Time",
-                        "OS Username",
-                        "Ranger Status",
-                        "Ranger Version",
-                        "Registered At",
-                        "Remote Profiling State",
-                        "Remote Profiling State Expiration",
-                        "Scan Aborted At",
-                        "Scan Finished At",
-                        "Scan Started At",
-                        "Scan Status",
-                        "Serial Number",
-                        "Storage Name",
-                        "Storage Type",
-                        "Tags",
-                        "Total Memory",
-                        "Updated At",
-                        "User Actions Needed",
-                    ]
-                ]
-                logger.debug("Writing endpoint data to %s", output_file)
-                df_json.to_excel(output_file, index=False, sheet_name="Endpoints")
+                f.writerow(tmp)
+                logger.debug("First run complete, setting firstrun to False")
+                firstrun = False
+            for item in data:
+                tmp = []
+                for key, value in item.items():
+                    tmp.append(value)
+                logger.debug(
+                    "Writing data to new row: %s",
+                    tmp,
+                )
+                f.writerow(tmp)
 
             if cursor:
                 paramsnext = f"/web/api/{api_version}/agents?{query_limits}&sortBy=computerName&sortOrder=asc&cursor={cursor}"
@@ -1198,7 +1071,29 @@ def exportAllAgents():
             else:
                 logger.debug("No cursor found, setting URL to None")
                 url = None
-    logger.info("Done! Output file is - %s", output_file)
+
+    if endpointOutputType.get() == "xlsx":
+        logger.info("Creating new XLSX: %s", xlsx_file)
+        workbook = Workbook(xlsx_file)
+        logger.debug("Adding new worksheet: 'Endpoints'")
+        worksheet = workbook.add_worksheet("Endpoints")
+        if os.path.isfile(csv_file):
+            with open(csv_file, "r", encoding="utf8") as f:
+                logger.info("Reading %s and writing to %s", csv_file, xlsx_file)
+                reader = csv.reader(f)
+                for r, row in enumerate(reader):
+                    for c, col in enumerate(row):
+                        worksheet.write(r, c, col)
+            logger.debug("Deleting %s", csv_file)
+            os.remove(csv_file)
+        else:
+            logger.error("%s not found.", csv_file)
+        logger.debug("Closing XLSX")
+        workbook.close()
+
+    logger.info(
+        "Done! Output file is - %s.%s\n", output_file_name, endpointOutputType.get()
+    )
 
 
 def decommissionAgents():
@@ -1206,7 +1101,7 @@ def decommissionAgents():
     st = ScrolledText.ScrolledText(
         master=decommissionAgentsFrame, state="disabled", height=10
     )
-    st.configure(font="TkFixedFont")
+    st.configure(font=st_font)
     st.grid(row=13, column=0, pady=10)
     text_handler = TextHandler(st)
     logging.basicConfig(
@@ -1316,7 +1211,7 @@ def exportExclusions():
     st = ScrolledText.ScrolledText(
         master=exportExclusionsFrame, state="disabled", height=10
     )
-    st.configure(font="TkFixedFont")
+    st.configure(font=st_font)
     st.grid(row=13, column=0, pady=10)
     text_handler = TextHandler(st)
     logging.basicConfig(
@@ -1864,7 +1759,8 @@ def exportExclusions():
 
     logger.info("Creating XLSX...")
 
-    xlsx_filename = "Exceptions_Export.xlsx"
+    datestamp = datetime.datetime.now().strftime("%Y-%m-%d_%f")
+    xlsx_filename = f"Exceptions_Export_{datestamp}.xlsx"
     workbook = Workbook(xlsx_filename)
     csvs = [
         "exceptions_path.csv",
@@ -1885,7 +1781,7 @@ def exportExclusions():
         if os.path.exists(csvfile):
             os.remove(csvfile)
     workbook.close()
-    logger.info("Done! Created the file %s", xlsx_filename)
+    logger.info("Done! Created the file %s\n", xlsx_filename)
 
 
 def exportEndpointTags():
@@ -1893,7 +1789,7 @@ def exportEndpointTags():
     st = ScrolledText.ScrolledText(
         master=exportEndpointTagsFrame, state="disabled", height=10
     )
-    st.configure(font="TkFixedFont")
+    st.configure(font=st_font)
     st.grid(row=13, column=0, pady=10)
     text_handler = TextHandler(st)
     logging.basicConfig(
@@ -1904,7 +1800,7 @@ def exportEndpointTags():
     logger = logging.getLogger()
     logger.addHandler(text_handler)
 
-    datestamp = datetime.datetime.now().strftime("%Y-%m-%d")
+    datestamp = datetime.datetime.now().strftime("%Y-%m-%d_%f")
     export_csv = f"Endpoint_Tags_Export_{datestamp}.csv"
     f = csv.writer(open(export_csv, "a+", newline="", encoding="utf-8"))
     firstrun = True
@@ -1937,12 +1833,19 @@ def exportEndpointTags():
             data = response.json()
             cursor = data["pagination"]["nextCursor"]
             data = data["data"]
+            logger.info("Writing endpoint tags data to %s", export_csv)
             if data:
                 if firstrun:
+                    logger.debug("First run through data")
                     tmp = []
                     for key, value in data[0].items():
                         tmp.append(key)
+                    logger.debug(
+                        "Writing column headers to first row: %s",
+                        tmp,
+                    )
                     f.writerow(tmp)
+                    logger.debug("First run complete, setting firstrun to False")
                     firstrun = False
                 for item in data:
                     tmp = []
@@ -1956,7 +1859,7 @@ def exportEndpointTags():
             else:
                 logger.debug("No cursor found, setting URL to None")
                 url = None
-    logger.info("Done! Output file is - %s", export_csv)
+    logger.info("Done! Output file is - %s\n", export_csv)
 
 
 def manageEndpointTags():
@@ -1964,7 +1867,7 @@ def manageEndpointTags():
     st = ScrolledText.ScrolledText(
         master=manageEndpointTagsFrame, state="disabled", height=10
     )
-    st.configure(font="TkFixedFont")
+    st.configure(font=st_font)
     st.grid(row=13, column=0, columnspan=2, pady=10)
     text_handler = TextHandler(st)
     logging.basicConfig(
@@ -2036,7 +1939,7 @@ def exportLocalConfig():
     st = ScrolledText.ScrolledText(
         master=exportLocalConfigFrame, state="disabled", height=10
     )
-    st.configure(font="TkFixedFont")
+    st.configure(font=st_font)
     st.grid(row=13, column=0, pady=10)
     text_handler = TextHandler(st)
     logging.basicConfig(
@@ -2047,7 +1950,7 @@ def exportLocalConfig():
     logger = logging.getLogger()
     logger.addHandler(text_handler)
 
-    datestamp = datetime.datetime.now().strftime("%Y-%m-%d")
+    datestamp = datetime.datetime.now().strftime("%Y-%m-%d_%f")
     json_file = f"Local_Config_Export_{datestamp}.json"
 
     with open(inputcsv.get()) as csv_file:
@@ -2115,7 +2018,7 @@ def exportLocalConfig():
             )
             if response.status_code != 200:
                 logger.error(
-                    "Failed to get local config for Agent ID: %s} Error code: %s Description: %s",
+                    "Failed to get local config for Agent ID: %s Error code: %s Description: %s",
                     agent_id,
                     str(response.status_code),
                     str(response.text),
@@ -2135,13 +2038,13 @@ def exportLocalConfig():
                 json.dump(formatted_data, f, indent=4)
                 f.write("\n")
 
-    logger.info("Done! Output file is - %s", json_file)
+    logger.info("Done! Output file is - %s\n", json_file)
 
 
 def exportUsers():
     """Function to handle getting User Details and writing to CSV or XLSX"""
     st = ScrolledText.ScrolledText(master=exportUsersFrame, state="disabled", height=10)
-    st.configure(font="TkFixedFont")
+    st.configure(font=st_font)
     st.grid(row=13, column=0, columnspan=2, pady=10)
     text_handler = TextHandler(st)
     logging.basicConfig(
@@ -2152,12 +2055,11 @@ def exportUsers():
     logger = logging.getLogger()
     logger.addHandler(text_handler)
 
-    datestamp = datetime.datetime.now().strftime("%Y-%m-%d")
+    datestamp = datetime.datetime.now().strftime("%Y-%m-%d_%f")
     logger.debug("User selected %s file type", userOutputType.get())
-    if userOutputType.get() == "csv":
-        output_file = f"Export_Users_{datestamp}.csv"
-    else:
-        output_file = f"Export_Users_{datestamp}.xlsx"
+    output_file_name = f"Export_Users_{datestamp}"
+    csv_file = output_file_name + ".csv"
+    xlsx_file = output_file_name + ".xlsx"
 
     COL_NAMES = [
         "Full Name",
@@ -2219,102 +2121,52 @@ def exportUsers():
             if first_run:
                 total_users = data["pagination"]["totalItems"]
                 logger.debug(
-                    "First run through user data. User data returned for %s users.",
+                    "First run through user data. Total users in complete date set: %s",
                     total_users,
                 )
 
-            if userOutputType.get() == "csv":
-                with open(output_file, mode="a+", newline="", encoding="utf-8") as file:
-                    logger.debug("Writing CSV with User data")
-                    fieldnames = COL_NAMES
-                    csv_writer = csv.DictWriter(
-                        file, delimiter=",", fieldnames=fieldnames
+            with open(csv_file, mode="a+", newline="", encoding="utf-8") as file:
+                logger.debug("Writing CSV with User data")
+                fieldnames = COL_NAMES
+                csv_writer = csv.DictWriter(file, delimiter=",", fieldnames=fieldnames)
+                if first_run:
+                    csv_writer.writeheader()
+                    logger.debug(
+                        "First run through the data set complete, setting first run to False"
                     )
-                    if first_run:
-                        csv_writer.writeheader()
+                    first_run = False
 
-                    for user in users:
-                        logger.debug("Adding %s to %s", user["fullName"], output_file)
-                        csv_writer.writerow(
-                            {
-                                "Full Name": user["fullName"],
-                                "Email": user["email"],
-                                "Verified Email": user["emailVerified"],
-                                "User ID": user["id"],
-                                "Date Joined": user["dateJoined"],
-                                "First Login Date": user.get("firstLogin") or "Never",
-                                "Last Login": user.get("lastLogin") or "Never",
-                                "2FA Enabled?": user["twoFaEnabled"],
-                                "2FA Method": user.get("primaryTwoFaMethod") or "N/A",
-                                "Lowest Role": user["lowestRole"],
-                                "Scope": user["scope"],
-                                "Scope Roles": user["scopeRoles"],
-                                "Site Roles": user.get("siteRoles") or "N/A",
-                                "Tenant Roles": user.get("tenantRoles") or "N/A",
-                                "API Token Dates": user.get("apiToken") or "N/A",
-                                "Read-Only Groups": user["groupsReadOnly"],
-                                "Read-Only Email": user["emailReadOnly"],
-                                "Read-Only Full Name": user["fullNameReadOnly"],
-                                "Source": user["source"],
-                                "Is System?": user["isSystem"],
-                            }
-                        )
-            else:
-                df_json = pd.DataFrame(users)
-                df_json.rename(
-                    columns={
-                        "apiToken": "API Token Dates",
-                        "dateJoined": "Date Joined",
-                        "email": "Email",
-                        "emailReadOnly": "Read-Only Email",
-                        "emailVerified": "Verified Email",
-                        "firstLogin": "First Login Date",
-                        "fullName": "Full Name",
-                        "fullNameReadOnly": "Read-Only Full Name",
-                        "groupsReadOnly": "Read-Only Groups",
-                        "id": "User ID",
-                        "isSystem": "Is System?",
-                        "lastLogin": "Last Login",
-                        "lowestRole": "Lowest Role",
-                        "primaryTwoFaMethod": "2FA Method",
-                        "scope": "Scope",
-                        "scopeRoles": "Scope Roles",
-                        "siteRoles": "Site Roles",
-                        "source": "Source",
-                        "tenantRoles": "Tenant Roles",
-                        "twoFaEnabled": "2FA Enabled?",
-                    },
-                    inplace=True,
-                )
-                df_json = df_json[
-                    [
-                        "Full Name",
-                        "Email",
-                        "Verified Email",
-                        "User ID",
-                        "Date Joined",
-                        "First Login Date",
-                        "Last Login",
-                        "2FA Enabled?",
-                        "2FA Method",
-                        "Lowest Role",
-                        "Scope",
-                        "Scope Roles",
-                        "Site Roles",
-                        "Tenant Roles",
-                        "API Token Dates",
-                        "Read-Only Groups",
-                        "Read-Only Email",
-                        "Read-Only Full Name",
-                        "Source",
-                        "Is System?",
-                    ]
-                ]
-                logger.debug("Writing User data to %s", output_file)
-                df_json.to_excel(output_file, index=False, sheet_name="Users")
-
-            logger.debug("Setting first run to false")
-            first_run = False
+                for user in users:
+                    logger.debug(
+                        "Adding %s - %s to %s",
+                        user["fullName"],
+                        user["email"],
+                        csv_file,
+                    )
+                    csv_writer.writerow(
+                        {
+                            "Full Name": user["fullName"],
+                            "Email": user["email"],
+                            "Verified Email": user["emailVerified"],
+                            "User ID": user["id"],
+                            "Date Joined": user["dateJoined"],
+                            "First Login Date": user.get("firstLogin") or "Never",
+                            "Last Login": user.get("lastLogin") or "Never",
+                            "2FA Enabled?": user["twoFaEnabled"],
+                            "2FA Method": user.get("primaryTwoFaMethod") or "N/A",
+                            "Lowest Role": user["lowestRole"],
+                            "Scope": user["scope"],
+                            "Scope Roles": user["scopeRoles"],
+                            "Site Roles": user.get("siteRoles") or "N/A",
+                            "Tenant Roles": user.get("tenantRoles") or "N/A",
+                            "API Token Dates": user.get("apiToken") or "N/A",
+                            "Read-Only Groups": user["groupsReadOnly"],
+                            "Read-Only Email": user["emailReadOnly"],
+                            "Read-Only Full Name": user["fullNameReadOnly"],
+                            "Source": user["source"],
+                            "Is System?": user["isSystem"],
+                        }
+                    )
 
             if cursor:
                 paramsnext = f"/web/api/{api_version}/users?{query_limits}&sortOrder=asc&sortBy=email&cursor={cursor}"
@@ -2324,7 +2176,28 @@ def exportUsers():
                 logger.debug("No cursor found, setting URL to None")
                 url = None
 
-    logger.info("Done! Output file is - %s. Total users: %s", output_file, total_users)
+    if userOutputType.get() == "xlsx":
+        logger.debug("Creating new XLSX: %s", xlsx_file)
+        workbook = Workbook(xlsx_file)
+        logger.debug("Adding new worksheet: 'Users'")
+        worksheet = workbook.add_worksheet("Users")
+        if os.path.isfile(csv_file):
+            with open(csv_file, "r", encoding="utf8") as f:
+                logger.debug("Reading %s and writing to %s", csv_file, workbook)
+                reader = csv.reader(f)
+                for r, row in enumerate(reader):
+                    for c, col in enumerate(row):
+                        worksheet.write(r, c, col)
+            logger.debug("Deleting %s", csv_file)
+            os.remove(csv_file)
+        else:
+            logger.error("%s not found.", csv_file)
+        logger.debug("Closing XLSX")
+        workbook.close()
+
+    logger.info(
+        "Done! Output file is - %s.%s\n", output_file_name, userOutputType.get()
+    )
 
 
 def export_ranger():
@@ -2332,7 +2205,7 @@ def export_ranger():
     st = ScrolledText.ScrolledText(
         master=exportRangerInvFrame, state="disabled", height=10
     )
-    st.configure(font="TkFixedFont")
+    st.configure(font=st_font)
     st.grid(row=13, column=0, columnspan=2, pady=10)
     text_handler = TextHandler(st)
     logging.basicConfig(
@@ -2403,7 +2276,7 @@ def export_ranger():
                         url = None
                         continue
                     else:
-                        csv_filename = f"Ranger_Export_{export_scope.capitalize()}_{row[0]}_{ranger_time_period}_{datestamp}.csv"
+                        csv_filename = f"Ranger_Export-{export_scope.capitalize()}_{row[0]}_{ranger_time_period}_{datestamp}.csv"
                         logger.debug("Opening %s to write", csv_filename)
                         f = csv.writer(
                             open(csv_filename, "a+", newline="", encoding="utf-8")
@@ -2428,10 +2301,8 @@ def export_ranger():
                     else:
                         logger.debug("No cursor found, setting URL to None")
                         url = None
-                logger.info(
-                    "Done! Output file is - %s.",
-                    csv_filename,
-                )
+                logger.info("Finished writing to %s", csv_filename)
+        logger.info("Done exporting Ranger Inventory.")
 
 
 def selectCSVFile():
@@ -2904,7 +2775,7 @@ tk.Label(
 ).grid(row=0, column=0, columnspan=2, padx=20, pady=20)
 tk.Label(
     master=exportEndpointsFrame,
-    text="Exports all Agent details to a CSV or XSLX",
+    text="Exports all Agent details to a CSV or XLSX",
     font=frame_subtitle_font,
 ).grid(row=1, column=0, columnspan=2, padx=20, pady=2)
 endpointOutputType = tk.StringVar()
@@ -3046,14 +2917,14 @@ tk.Label(
 tk.Label(
     master=exportLocalConfigFrame,
     text="1. Select a CSV file containing a single column of agent UUIDs",
-).grid(row=2, column=0, columnspan=2, padx=20, pady=2)
+).grid(row=2, column=0, padx=20, pady=2)
 ttk.Button(
     master=exportLocalConfigFrame,
     text="Browse",
     command=selectCSVFile,
-).grid(row=3, column=0, columnspan=2, pady=10)
+).grid(row=3, column=0, pady=10)
 tk.Label(master=exportLocalConfigFrame, textvariable=inputcsv).grid(
-    row=4, column=0, columnspan=2, pady=10
+    row=4, column=0, pady=10
 )
 ttk.Button(
     master=exportLocalConfigFrame,
