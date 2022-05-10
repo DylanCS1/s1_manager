@@ -91,7 +91,7 @@ Export events from Deep Visibility to an XLSX based on a Deep Visibility Query I
 
 To generate a Deep Visibility query:
 1. Log in to the Management Console
-2. Go to the Deep Visibility Page and create the query. For example: *EndpointName Contains Anycase "win10" AND EndpointOS = "windows"*
+2. Go to the Deep Visibility Page and create the query. For example: `EndpointName Contains Anycase "win10" AND EndpointOS = "windows"`
  
 ![Deep Visibility Query][dv-screenshot]
 
