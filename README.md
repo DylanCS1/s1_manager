@@ -22,7 +22,7 @@ The S1 Manager tool is a GUI-based application to assist SentinelOne administrat
 
 <!-- GETTING STARTED -->
 ## Getting Started
----
+
 ### Download EXE
 To download the latest release:
 - [https://github.com/DylanCS1/s1_manager/releases/download/v2022.1.1/s1_manager-2022.1.1.exe](https://github.com/DylanCS1/s1_manager/releases/download/v2022.1.1/s1_manager-2022.1.1.exe)
@@ -68,7 +68,7 @@ To get a local copy up and running follow these simple steps:
 
 <!-- USAGE EXAMPLES -->
 ## Usage
----
+
 Presently, everything in the S1 Manager tool runs on a single thread so when executing a task the GUI will appear to be "dead" (GUI cannot accept new events). You will just need to be patient :)  
 
 > The permissions assigned to the user associated with the API Token define what actions can be performed, and at what scope.
@@ -84,7 +84,7 @@ Presently, everything in the S1 Manager tool runs on a single thread so when exe
 ![Login][login-view]
 
 ## Available Export Operations
----
+
 ### Export Deep Visibility Events
 
 Export events from Deep Visibility to an XLSX based on a Deep Visibility Query ID. Multiple datapoints are temporarily written to CSVs which then get combined into a single XLSX, one CSV per worksheet in the XLSX.
@@ -171,7 +171,7 @@ Process:
 
 
 ## Available Manage Operations
----
+
 ### Upgrade Agents
 
 Bulk upgrade agents from a named endpoint list in a CSV file.
@@ -265,7 +265,7 @@ Process:
 
 <!-- ROADMAP -->
 ## Roadmap
----
+
 Proposed (hopeful) changes to implement in the near future.
 
 - [ ] Add additional features around newer API offerings
@@ -294,7 +294,7 @@ Proposed (hopeful) changes to implement in the near future.
 
 <!-- CONTRIBUTING -->
 ## Contributing
----
+
 Contributions are greatly appreciated.
 
 If you have a suggestion that would make this better, please fork the repo and create a pull request. You can also simply open an issue with the tag "enhancement". Thanks again!
@@ -310,7 +310,7 @@ The s1_manager tool should be run through the Python Black code formatter. Refer
 
 <!-- ISSUES -->
 ## Reporting Issues
----
+
 If you observe any issues using the S1 Manager tool, please check if this issue is already documented by checking the [issues][issues-url] page. If not, then fill out a new issue providing as much detail as possible including any inputs, observed behavior/errors in the UI, etc. Additionally, if you launch the S1 Manager tool with `--debug` argument, verbose logging is generated which may assist in troubleshooting. If you can easily replicate the issue please do so with debug logging enabled and provide the log file.  
 > **Important Note:** The debug logging is quite verbose and can include tens of thousands of lines. Additionally, your API Token will be displayed in plaintext so this should not be used except for troubleshooting. When done, the **s1_manager_debug** log should be properly purged from your file system.
 
@@ -325,7 +325,7 @@ s1_manager.exe --debug
 
 <!-- LICENSE -->
 ## License
----
+
 Distributed under the MIT License. See [LICENSE.txt][license-url] for more information.
 
 SentinelOne and the SentinelOne logomark are &trade; of [SentinelOne](https://www.sentinelone.com/legal/tm-guidelines/ "SentinelOne Trademark").
@@ -333,7 +333,7 @@ SentinelOne and the SentinelOne logomark are &trade; of [SentinelOne](https://ww
 
 <!-- ACKNOWLEDGEMENTS -->
 ## Acknowledgements
----
+
 A huge thank you to the following individuals for starting the S1 Manager tool project:
 - [guysentinel](https://github.com/guysentinel "guysentinel")
 - [tomerbsentinel](https://github.com/tomerbsentinel "tomerbsentinel")
