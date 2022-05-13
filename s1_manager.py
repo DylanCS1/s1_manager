@@ -24,18 +24,20 @@ from PIL import Image, ImageTk
 from xlsxwriter.workbook import Workbook
 
 # CONSTS
-__version__ = "2022.1.2"
-api_version = "v2.1"
-dir_path = os.path.dirname(os.path.realpath(__file__))
-query_limits = "limit=1000"
+__version__ = "2022.1.3"
+API_VERSION = "v2.1"
+DIR_PATH = os.path.dirname(os.path.realpath(__file__))
+QUERY_LIMITS = "limit=1000"
 
 # LOG SETTINGS
 if len(sys.argv) > 1 and sys.argv[1] == "--debug":
     LOG_LEVEL = logging.DEBUG
-    LOG_NAME = f"s1_manager_debug_{datetime.datetime.now().strftime('%Y-%m-%d')}.log"
+    LOG_NAME = f"s1_manager_debug_{datetime.datetime.now().strftime('%Y-%m-%d')}_{__version__}.log"
 else:
     LOG_LEVEL = logging.INFO
-    LOG_NAME = f"s1_manager_{datetime.datetime.now().strftime('%Y-%m-%d')}.log"
+    LOG_NAME = (
+        f"s1_manager_{datetime.datetime.now().strftime('%Y-%m-%d')}_{__version__}.log"
+    )
 if LOG_LEVEL == logging.DEBUG:
     LOG_FORMAT = "%(asctime)s - %(levelname)s - %(funcName)s:%(lineno)s - %(message)s"
 else:
@@ -45,47 +47,45 @@ else:
 window = tk.Tk()
 window.title("S1 Manager")
 if platform.system() == "Windows":
-    window.iconbitmap(os.path.join(dir_path, "ico/s1_manager.ico"))
+    window.iconbitmap(os.path.join(DIR_PATH, "ico/s1_manager.ico"))
 window.minsize(850, 650)
 
 # THEME
-window.tk.call(
-    "source", os.path.join(dir_path, "theme/forest-dark.tcl")
-)  # https://github.com/rdbende/Forest-ttk-theme
-logo = ImageTk.PhotoImage(Image.open(os.path.join(dir_path, "ico/s1_manager.png")))
+window.tk.call("source", os.path.join(DIR_PATH, "theme/forest-dark.tcl"))
+LOGO = ImageTk.PhotoImage(Image.open(os.path.join(DIR_PATH, "ico/s1_manager.png")))
 ttk.Style().theme_use("forest-dark")
-frame_title_font = ("Courier", 24, UNDERLINE)
-frame_subtitle_font_underline = ("Arial", 14, UNDERLINE)
-frame_subtitle_font = ("Arial", 12)
-frame_subnote_font = ("Arial", 10)
-frame_note_fg_color = "red"
-st_font = "TkFixedFont"
+FRAME_TITLE_FONT = ("Courier", 24, UNDERLINE)
+FRAME_SUBTITLE_FONT_UNDERLINE = ("Arial", 14, UNDERLINE)
+FRAME_SUBTITLE_FONT = ("Arial", 12)
+FRAME_SUBNOTE_FONT = ("Arial", 10)
+FRAME_NOTE_FG_COLOR = "red"
+ST_FONT = "TkFixedFont"
 
 # FRAME CONSTS
-loginMenuFrame = ttk.Frame()
-mainMenuFrame = ttk.Frame()
-exportFromDVFrame = ttk.Frame()
-exportActivityLogFrame = ttk.Frame()
-exportEndpointsFrame = ttk.Frame()
-exportEndpointTagsFrame = ttk.Frame()
-exportExclusionsFrame = ttk.Frame()
-exportLocalConfigFrame = ttk.Frame()
-exportUsersFrame = ttk.Frame()
-exportRangerInvFrame = ttk.Frame()
-upgradeFromCSVFrame = ttk.Frame()
-moveAgentsFrame = ttk.Frame()
-assignCustomerIdentifierFrame = ttk.Frame()
-decommissionAgentsFrame = ttk.Frame()
-manageEndpointTagsFrame = ttk.Frame()
-error = tk.StringVar()
-hostname = tk.StringVar()
-apitoken = tk.StringVar()
-proxy = tk.StringVar()
-inputcsv = tk.StringVar()
-useSSL = tk.BooleanVar()
-useSSL.set(True)
-useSchedule = tk.BooleanVar()
-useSchedule.set(False)
+LOGIN_MENU_FRAME = ttk.Frame()
+MAIN_MENU_FRAME = ttk.Frame()
+EXPORT_FROM_DV_FRAME = ttk.Frame()
+EXPORT_ACTIVITY_LOG_FRAME = ttk.Frame()
+EXPORT_ENDPOINTS_FRAME = ttk.Frame()
+EXPORT_ENDPOINT_TAGS_FRAME = ttk.Frame()
+EXPORT_EXCLUSIONS_FRAME = ttk.Frame()
+EXPORT_LOCAL_CONFIG_FRAME = ttk.Frame()
+EXPORT_USERS_FRAME = ttk.Frame()
+EXPORT_RANGER_INV_FRAME = ttk.Frame()
+UPGRADE_FROM_CSV_FRAME = ttk.Frame()
+MOVE_AGENTS_FRAME = ttk.Frame()
+ASSIGN_CUSTOMER_ID_FRAME = ttk.Frame()
+DECOMMISSION_AGENTS_FRAME = ttk.Frame()
+MANAGE_ENDPOINT_TAGS_FRAME = ttk.Frame()
+ERROR = tk.StringVar()
+HOSTNAME = tk.StringVar()
+API_TOKEN = tk.StringVar()
+PROXY = tk.StringVar()
+INPUT_CSV = tk.StringVar()
+USE_SSL = tk.BooleanVar()
+USE_SSL.set(True)
+USE_SCHEDULE = tk.BooleanVar()
+USE_SCHEDULE.set(False)
 
 
 class TextHandler(logging.Handler):
@@ -112,7 +112,8 @@ class TextHandler(logging.Handler):
         self.text.after(0, append)
 
 
-def testLogin(hostname, apitoken, proxy):
+# Helper Functions
+def test_login(hostname, apitoken, proxy):
     """Function to test login using APIToken or Token"""
 
     headers = {
@@ -120,10 +121,10 @@ def testLogin(hostname, apitoken, proxy):
         "Authorization": "ApiToken " + apitoken,
     }
     r = requests.get(
-        hostname + f"/web/api/{api_version}/system/info",
+        hostname + f"/web/api/{API_VERSION}/system/info",
         headers=headers,
         proxies={"http": proxy, "https": proxy},
-        verify=useSSL.get(),
+        verify=USE_SSL.get(),
     )
 
     if r.status_code == 200:
@@ -134,10 +135,10 @@ def testLogin(hostname, apitoken, proxy):
             "Authorization": "Token " + apitoken,
         }
         r = requests.get(
-            hostname + f"/web/api/{api_version}/system/info",
+            hostname + f"/web/api/{API_VERSION}/system/info",
             headers=headers,
             proxies={"http": proxy, "https": proxy},
-            verify=useSSL.get(),
+            verify=USE_SSL.get(),
         )
         r.raise_for_status()
         if r.status_code == 200:
@@ -148,33 +149,33 @@ def testLogin(hostname, apitoken, proxy):
 
 def login():
     """Function to handle login actions"""
-    hostname.set(consoleAddressEntry.get())
-    apitoken.set(apikTokenEntry.get())
-    proxy.set(proxyEntry.get())
+    HOSTNAME.set(console_address_entry.get())
+    API_TOKEN.set(api_token_entry.get())
+    PROXY.set(proxy_entry.get())
     global headers
 
-    if not hostname.get() or not apitoken.get():
+    if not HOSTNAME.get() or not API_TOKEN.get():
         tk.Label(
-            master=loginMenuFrame,
+            master=LOGIN_MENU_FRAME,
             text="'Management Console URL' and 'API Token' cannot be empty.",
-            fg=frame_note_fg_color,
-            font=frame_subnote_font,
+            fg=FRAME_NOTE_FG_COLOR,
+            font=FRAME_SUBNOTE_FONT,
         ).grid(row=11, column=0, columnspan=2, pady=10)
     else:
-        headers, login_succ = testLogin(hostname.get(), apitoken.get(), proxy.get())
+        headers, login_succ = test_login(HOSTNAME.get(), API_TOKEN.get(), PROXY.get())
         if login_succ:
-            loginMenuFrame.pack_forget()
-            mainMenuFrame.pack()
+            LOGIN_MENU_FRAME.pack_forget()
+            MAIN_MENU_FRAME.pack()
         else:
             tk.Label(
-                master=loginMenuFrame,
+                master=LOGIN_MENU_FRAME,
                 text="Login to the management console failed. Please check your credentials and try again",
-                fg=frame_note_fg_color,
-                font=frame_subnote_font,
+                fg=FRAME_NOTE_FG_COLOR,
+                font=FRAME_SUBNOTE_FONT,
             ).grid(row=11, column=0, columnspan=2, pady=10)
 
 
-def goBacktoMainPage():
+def go_back_to_mainpage():
     """Function to handle moving back to the Main Menu Frame"""
     _list = window.winfo_children()
     for item in _list:
@@ -183,22 +184,29 @@ def goBacktoMainPage():
     for item in _list:
         if isinstance(item, tk.Toplevel) is not True:
             item.pack_forget()
-    mainMenuFrame.pack()
+    MAIN_MENU_FRAME.pack()
 
 
-def switchFrames(framename):
+def switch_frames(framename):
     """Function to handle switching tkinter frames"""
-    inputcsv.set("")
-    mainMenuFrame.pack_forget()
+    INPUT_CSV.set("")
+    MAIN_MENU_FRAME.pack_forget()
     framename.pack()
 
 
-def exportFromDV():
+def select_csv_file():
+    """Basic function to present user with browse window to source a CSV file for input"""
+    file = tkinter.filedialog.askopenfilename()
+    INPUT_CSV.set(file)
+
+
+# Tool operation functions
+def export_from_dv():
     """Function to export events from Deep Visibility by DV query ID"""
     st = ScrolledText.ScrolledText(
-        master=exportFromDVFrame, state="disabled", height=10
+        master=EXPORT_FROM_DV_FRAME, state="disabled", height=10
     )
-    st.configure(font=st_font)
+    st.configure(font=ST_FONT)
     st.grid(row=13, column=0, pady=10)
     text_handler = TextHandler(st)
     logging.basicConfig(
@@ -221,18 +229,18 @@ def exportFromDV():
     async def dv_query_to_csv(
         querytype, session, hostname, dv_query_id, headers, firstrun, proxy
     ):
-        params = f"/web/api/{api_version}/dv/events/{querytype}?queryId={dv_query_id}"
+        params = f"/web/api/{API_VERSION}/dv/events/{querytype}?queryId={dv_query_id}"
         url = hostname + params
         while url:
             async with session.get(
-                url, headers=headers, proxy=proxy, ssl=useSSL.get()
+                url, headers=headers, proxy=proxy, ssl=USE_SSL.get()
             ) as response:
                 logger.debug(
                     "Making API Call with the following:\nURL: %s\tHeaders: %s\tProxy: %s\tUse SSL: %s",
                     url,
                     headers,
                     proxy,
-                    useSSL.get(),
+                    USE_SSL.get(),
                 )
                 if response.status != 200:
                     logger.error(
@@ -374,7 +382,7 @@ def exportFromDV():
                                     tmp.append(value)
                                 f.writerow(tmp)
                     if cursor:
-                        paramsnext = f"/web/api/{api_version}/dv/events/{querytype}?cursor={cursor}&queryId={dv_query_id}&{query_limits}"
+                        paramsnext = f"/web/api/{API_VERSION}/dv/events/{querytype}?cursor={cursor}&queryId={dv_query_id}&{QUERY_LIMITS}"
                         url = hostname + paramsnext
                         logger.debug("Found next cursor: %s", cursor)
                     else:
@@ -436,13 +444,13 @@ def exportFromDV():
                 await typeregistry
                 await typescheduledtask
 
-    dv_query_id = queryIdEntry.get()
+    dv_query_id = query_id_entry.get()
     if dv_query_id:
         logger.info("Processing DV Query ID: %s", dv_query_id)
         dv_query_id = dv_query_id.split(",")
         if platform.system() == "Windows":
             asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
-        asyncio.run(run(hostname.get(), dv_query_id, apitoken.get(), proxy.get()))
+        asyncio.run(run(HOSTNAME.get(), dv_query_id, API_TOKEN.get(), PROXY.get()))
         xlsx_filename = "-"
         xlsx_filename = f"DV_Export_{xlsx_filename.join(dv_query_id)}.xlsx"
         workbook = Workbook(xlsx_filename)
@@ -472,12 +480,12 @@ def exportFromDV():
         logger.error("Please enter a valid DV Query ID and try again.", dv_query_id)
 
 
-def exportActivityLog(searchOnly):
+def export_activity_log(searchOnly):
     """Function to search for Activity events by date range or export Activity events"""
     st = ScrolledText.ScrolledText(
-        master=exportActivityLogFrame, state="disabled", height=10
+        master=EXPORT_ACTIVITY_LOG_FRAME, state="disabled", height=10
     )
-    st.configure(font=st_font)
+    st.configure(font=ST_FONT)
     st.grid(row=13, column=0, pady=10)
     text_handler = TextHandler(st)
     logging.basicConfig(
@@ -490,35 +498,37 @@ def exportActivityLog(searchOnly):
 
     os.environ["TZ"] = "UTC"
     p = "%Y-%m-%d"
-    fromdate_epoch = str(int(time.mktime(time.strptime(dateFrom.get(), p)))) + "000"
-    todate_epoch = str(int(time.mktime(time.strptime(dateTo.get(), p)))) + "000"
-    logger.debug("Input FROM Date: %s Input TO Date: %s", dateFrom.get(), dateTo.get())
+    fromdate_epoch = str(int(time.mktime(time.strptime(date_from.get(), p)))) + "000"
+    todate_epoch = str(int(time.mktime(time.strptime(date_to.get(), p)))) + "000"
+    logger.debug(
+        "Input FROM Date: %s Input TO Date: %s", date_from.get(), date_to.get()
+    )
     logger.debug(
         "Epoch-converted FROM Date: %s Epoch-converted TO Date: %s",
         fromdate_epoch,
         todate_epoch,
     )
-    if dateFrom.get() and dateTo.get():
+    if date_from.get() and date_to.get():
         url = (
-            hostname.get()
-            + f"/web/api/{api_version}/activities?{query_limits}&createdAt__between={fromdate_epoch}-{todate_epoch}&countOnly=false&includeHidden=false"
+            HOSTNAME.get()
+            + f"/web/api/{API_VERSION}/activities?{QUERY_LIMITS}&createdAt__between={fromdate_epoch}-{todate_epoch}&countOnly=false&includeHidden=false"
         )
         logger.debug("Search only state: %s", searchOnly)
         if searchOnly:
-            logger.info("Starting search for '%s'", stringSearchEntry.get())
+            logger.info("Starting search for '%s'", string_search_entry.get())
             while url:
                 response = requests.get(
                     url,
                     headers=headers,
-                    proxies={"http": proxy.get(), "https": proxy.get()},
-                    verify=useSSL.get(),
+                    proxies={"http": PROXY.get(), "https": PROXY.get()},
+                    verify=USE_SSL.get(),
                 )
                 logger.debug(
                     "Making API Call with the following:\nURL: %s\tHeaders: %s\tProxy: %s\tUse SSL: %s",
                     url,
                     headers,
-                    proxy.get(),
-                    useSSL.get(),
+                    PROXY.get(),
+                    USE_SSL.get(),
                 )
                 if response.status_code != 200:
                     logger.error(
@@ -534,7 +544,7 @@ def exportActivityLog(searchOnly):
                     if data:
                         for item in data:
                             if (
-                                stringSearchEntry.get().upper()
+                                string_search_entry.get().upper()
                                 in item["primaryDescription"].upper()
                             ):
                                 logger.info(
@@ -545,7 +555,7 @@ def exportActivityLog(searchOnly):
                                 )
                             elif item["secondaryDescription"]:
                                 if (
-                                    stringSearchEntry.get().upper()
+                                    string_search_entry.get().upper()
                                     in item["secondaryDescription"].upper()
                                 ):
                                     logger.info(
@@ -555,8 +565,8 @@ def exportActivityLog(searchOnly):
                                         item["secondaryDescription"],
                                     )
                     if cursor:
-                        paramsnext = f"/web/api/{api_version}/activities?{query_limits}&createdAt__between={fromdate_epoch}-{todate_epoch}&countOnly=false&cursor={cursor}&includeHidden=false"
-                        url = hostname.get() + paramsnext
+                        paramsnext = f"/web/api/{API_VERSION}/activities?{QUERY_LIMITS}&createdAt__between={fromdate_epoch}-{todate_epoch}&countOnly=false&cursor={cursor}&includeHidden=false"
+                        url = HOSTNAME.get() + paramsnext
                         logger.debug("Found next cursor: %s", cursor)
                     else:
                         logger.debug("No cursor found, setting URL to None")
@@ -578,15 +588,15 @@ def exportActivityLog(searchOnly):
                 response = requests.get(
                     url,
                     headers=headers,
-                    proxies={"http": proxy.get(), "https": proxy.get()},
-                    verify=useSSL.get(),
+                    proxies={"http": PROXY.get(), "https": PROXY.get()},
+                    verify=USE_SSL.get(),
                 )
                 logger.debug(
                     "Making API Call with the following:\nURL: %s\tHeaders: %s\tProxy: %s\tUse SSL: %s",
                     url,
                     headers,
-                    proxy.get(),
-                    useSSL.get(),
+                    PROXY.get(),
+                    USE_SSL.get(),
                 )
                 if response.status_code != 200:
                     logger.error(
@@ -622,8 +632,8 @@ def exportActivityLog(searchOnly):
                             )
                             f.writerow(tmp)
                     if cursor:
-                        paramsnext = f"/web/api/{api_version}/activities?{query_limits}&createdAt__between={fromdate_epoch}-{todate_epoch}&countOnly=false&cursor={cursor}&includeHidden=false"
-                        url = hostname.get() + paramsnext
+                        paramsnext = f"/web/api/{API_VERSION}/activities?{QUERY_LIMITS}&createdAt__between={fromdate_epoch}-{todate_epoch}&countOnly=false&cursor={cursor}&includeHidden=false"
+                        url = HOSTNAME.get() + paramsnext
                         logger.debug("Found next cursor: %s", cursor)
                     else:
                         logger.debug("No cursor found, setting URL to None")
@@ -633,12 +643,12 @@ def exportActivityLog(searchOnly):
         logger.error("You must state a FROM date and a TO date")
 
 
-def upgradeFromCSV(justPackages):
+def upgrade_from_csv(justPackages):
     """Function to upgrade Agents via API"""
     st = ScrolledText.ScrolledText(
-        master=upgradeFromCSVFrame, state="disabled", height=10
+        master=UPGRADE_FROM_CSV_FRAME, state="disabled", height=10
     )
-    st.configure(font=st_font)
+    st.configure(font=ST_FONT)
     st.grid(row=13, column=0, pady=10)
     text_handler = TextHandler(st)
     logging.basicConfig(
@@ -654,8 +664,8 @@ def upgradeFromCSV(justPackages):
 
     logger.debug("Just packages set to: %s", justPackages)
     if justPackages:
-        params = f"/web/api/{api_version}/update/agent/packages?sortBy=updatedAt&sortOrder=desc&countOnly=false&{query_limits}"
-        url = hostname.get() + params
+        params = f"/web/api/{API_VERSION}/update/agent/packages?sortBy=updatedAt&sortOrder=desc&countOnly=false&{QUERY_LIMITS}"
+        url = HOSTNAME.get() + params
         f = csv.writer(open(csv_filename, "a+", newline="", encoding="utf-8"))
         f.writerow(
             [
@@ -675,15 +685,15 @@ def upgradeFromCSV(justPackages):
             response = requests.get(
                 url,
                 headers=headers,
-                proxies={"http": proxy.get(), "https": proxy.get()},
-                verify=useSSL.get(),
+                proxies={"http": PROXY.get(), "https": PROXY.get()},
+                verify=USE_SSL.get(),
             )
             logger.debug(
                 "Making API Call with the following:\nURL: %s\tHeaders: %s\tProxy: %s\tUse SSL: %s",
                 url,
                 headers,
-                proxy.get(),
-                useSSL.get(),
+                PROXY.get(),
+                USE_SSL.get(),
             )
             if response.status_code != 200:
                 logger.error(
@@ -711,46 +721,46 @@ def upgradeFromCSV(justPackages):
                             ]
                         )
                 if cursor:
-                    paramsnext = f"/web/api/{api_version}/update/agent/packages?sortBy=updatedAt&sortOrder=desc&{query_limits}&cursor={cursor}&countOnly=false"
-                    url = hostname.get() + paramsnext
+                    paramsnext = f"/web/api/{API_VERSION}/update/agent/packages?sortBy=updatedAt&sortOrder=desc&{QUERY_LIMITS}&cursor={cursor}&countOnly=false"
+                    url = HOSTNAME.get() + paramsnext
                     logger.debug("Found next cursor: %s", cursor)
                 else:
                     logger.debug("No cursor found, setting URL to None")
                     url = None
         logger.info("SentinelOne agent packages list written to: %s", csv_filename)
     else:
-        with open(inputcsv.get()) as csv_file:
-            logger.debug("Reading CSV: %s", inputcsv.get())
+        with open(INPUT_CSV.get()) as csv_file:
+            logger.debug("Reading CSV: %s", INPUT_CSV.get())
             csv_reader = csv.reader(csv_file, delimiter=",")
             line_count = 0
-            logger.debug("Use Schedule value: %s", useSchedule.get())
+            logger.debug("Use Schedule value: %s", USE_SCHEDULE.get())
             for row in csv_reader:
                 logger.info("Upgrading endpoint named - %s", row[0])
                 url = (
-                    hostname.get()
-                    + f"/web/api/{api_version}/agents/actions/update-software"
+                    HOSTNAME.get()
+                    + f"/web/api/{API_VERSION}/agents/actions/update-software"
                 )
                 body = {
                     "filter": {"computerName": row[0]},
                     "data": {
-                        "packageId": packageIDEntry.get(),
-                        "isScheduled": useSchedule.get(),
+                        "packageId": package_id_entry.get(),
+                        "isScheduled": USE_SCHEDULE.get(),
                     },
                 }
                 response = requests.post(
                     url,
                     data=json.dumps(body),
                     headers=headers,
-                    proxies={"http": proxy.get(), "https": proxy.get()},
-                    verify=useSSL.get(),
+                    proxies={"http": PROXY.get(), "https": PROXY.get()},
+                    verify=USE_SSL.get(),
                 )
                 logger.debug(
                     "Making API Call with the following:\nURL: %s\tHeaders: %s\tData: %s\tProxy: %s\tUse SSL: %s",
                     url,
                     headers,
                     json.dumps(body),
-                    proxy.get(),
-                    useSSL.get(),
+                    PROXY.get(),
+                    USE_SSL.get(),
                 )
                 if response.status_code != 200:
                     logger.error(
@@ -764,21 +774,23 @@ def upgradeFromCSV(justPackages):
                     logger.info(
                         "Sent upgrade command to %s endpoints", data["data"]["affected"]
                     )
-                    if useSchedule.get():
+                    if USE_SCHEDULE.get():
                         logger.info(
                             "Upgrade should follow schedule defined in Management Console."
                         )
                 line_count += 1
             if line_count < 1:
-                logger.info("Finished! Input file %s was empty.", inputcsv.get())
+                logger.info("Finished! Input file %s was empty.", INPUT_CSV.get())
             else:
                 logger.info("Finished! Processed %d lines.", line_count)
 
 
-def moveAgents(justGroups):
+def move_agents(justGroups):
     """Function to move Agents using API"""
-    st = ScrolledText.ScrolledText(master=moveAgentsFrame, state="disabled", height=10)
-    st.configure(font=st_font)
+    st = ScrolledText.ScrolledText(
+        master=MOVE_AGENTS_FRAME, state="disabled", height=10
+    )
+    st.configure(font=ST_FONT)
     st.grid(row=13, column=0, pady=10)
     text_handler = TextHandler(st)
     logging.basicConfig(
@@ -791,8 +803,8 @@ def moveAgents(justGroups):
 
     if justGroups:
         logger.debug("Just move agents to groups: %s", justGroups)
-        params = f"/web/api/{api_version}/groups?isDefault=false&{query_limits}&type=static&countOnly=false"
-        url = hostname.get() + params
+        params = f"/web/api/{API_VERSION}/groups?isDefault=false&limit=200&type=static&countOnly=false"
+        url = HOSTNAME.get() + params
         csv_filename = "Group_To_ID_Map.csv"
         f = csv.writer(open(csv_filename, "a+", newline="", encoding="utf-8"))
         f.writerow(["Name", "ID", "Site ID", "Created By"])
@@ -800,15 +812,15 @@ def moveAgents(justGroups):
             response = requests.get(
                 url,
                 headers=headers,
-                proxies={"http": proxy.get(), "https": proxy.get()},
-                verify=useSSL.get(),
+                proxies={"http": PROXY.get(), "https": PROXY.get()},
+                verify=USE_SSL.get(),
             )
             logger.debug(
                 "Making API Call with the following:\nURL: %s\tHeaders: %s\tProxy: %s\tUse SSL: %s",
                 url,
                 headers,
-                proxy.get(),
-                useSSL.get(),
+                PROXY.get(),
+                USE_SSL.get(),
             )
             if response.status_code != 200:
                 logger.error(
@@ -831,22 +843,22 @@ def moveAgents(justGroups):
                             ]
                         )
                 if cursor:
-                    paramsnext = f"/web/api/{api_version}/groups?isDefault=false&{query_limits}&type=static&cursor={cursor}&countOnly=false"
-                    url = hostname.get() + paramsnext
+                    paramsnext = f"/web/api/{API_VERSION}/groups?isDefault=false&limit=200&type=static&cursor={cursor}&countOnly=false"
+                    url = HOSTNAME.get() + paramsnext
                     logger.debug("Found next cursor: %s", cursor)
                 else:
                     logger.debug("No cursor found, setting URL to None")
                     url = None
         logger.info("Added group mapping to the file %s", csv_filename)
     else:
-        with open(inputcsv.get()) as csv_file:
+        with open(INPUT_CSV.get()) as csv_file:
             csv_reader = csv.reader(csv_file, delimiter=",")
             line_count = 0
             for row in csv_reader:
                 logger.info("Moving endpoint name %s to Site ID %s", row[0], row[2])
                 url = (
-                    hostname.get()
-                    + f"/web/api/{api_version}/agents/actions/move-to-site"
+                    HOSTNAME.get()
+                    + f"/web/api/{API_VERSION}/agents/actions/move-to-site"
                 )
                 body = {
                     "filter": {"computerName": row[0]},
@@ -856,16 +868,16 @@ def moveAgents(justGroups):
                     url,
                     data=json.dumps(body),
                     headers=headers,
-                    proxies={"http": proxy.get(), "https": proxy.get()},
-                    verify=useSSL.get(),
+                    proxies={"http": PROXY.get(), "https": PROXY.get()},
+                    verify=USE_SSL.get(),
                 )
                 logger.debug(
                     "Making API Call with the following:\nURL: %s\tHeaders: %s\tData: %s\tProxy: %s\tUse SSL: %s",
                     url,
                     headers,
                     json.dumps(body),
-                    proxy.get(),
-                    useSSL.get(),
+                    PROXY.get(),
+                    USE_SSL.get(),
                 )
                 if response.status_code != 200:
                     logger.error(
@@ -875,13 +887,14 @@ def moveAgents(justGroups):
                         str(response.status_code),
                         str(response.text),
                     )
+                    continue
                 else:
                     data = response.json()
                     logger.info("Moved %s endpoints", data["data"]["affected"])
                 logger.info("Moving endpoint name %s to Group ID %s", row[0], row[1])
                 url = (
-                    hostname.get()
-                    + f"/web/api/{api_version}/groups/"
+                    HOSTNAME.get()
+                    + f"/web/api/{API_VERSION}/groups/"
                     + row[1]
                     + "/move-agents"
                 )
@@ -890,8 +903,8 @@ def moveAgents(justGroups):
                     url,
                     data=json.dumps(body),
                     headers=headers,
-                    proxies={"http": proxy.get(), "https": proxy.get()},
-                    verify=useSSL.get(),
+                    proxies={"http": PROXY.get(), "https": PROXY.get()},
+                    verify=USE_SSL.get(),
                 )
                 if response.status_code != 200:
                     logger.error(
@@ -901,22 +914,23 @@ def moveAgents(justGroups):
                         str(response.status_code),
                         str(response.text),
                     )
+                    continue
                 else:
                     data = response.json()
                     logger.info("Moved %s endpoints", data["data"]["agentsMoved"])
                 line_count += 1
             if line_count < 1:
-                logger.info("Finished! Input file %s was empty.", inputcsv.get())
+                logger.info("Finished! Input file %s was empty.", INPUT_CSV.get())
             else:
                 logger.info("Finished! Processed %d lines.", line_count)
 
 
-def assignCustomerIdentifier():
+def assign_customer_id():
     """Function to add a Customer Identifier to one or more Agents via API"""
     st = ScrolledText.ScrolledText(
-        master=assignCustomerIdentifierFrame, state="disabled", height=10
+        master=ASSIGN_CUSTOMER_ID_FRAME, state="disabled", height=10
     )
-    st.configure(font=st_font)
+    st.configure(font=ST_FONT)
     st.grid(row=13, column=0, pady=10)
     text_handler = TextHandler(st)
     logging.basicConfig(
@@ -927,33 +941,33 @@ def assignCustomerIdentifier():
     logger = logging.getLogger()
     logger.addHandler(text_handler)
 
-    with open(inputcsv.get()) as csv_file:
-        logger.debug("Reading CSV: %s", inputcsv.get())
+    with open(INPUT_CSV.get()) as csv_file:
+        logger.debug("Reading CSV: %s", INPUT_CSV.get())
         csv_reader = csv.reader(csv_file, delimiter=",")
         line_count = 0
         for row in csv_reader:
             logger.info("Updating customer identifier for endpoint - %s", row[0])
             url = (
-                hostname.get()
-                + f"/web/api/{api_version}/agents/actions/set-external-id"
+                HOSTNAME.get()
+                + f"/web/api/{API_VERSION}/agents/actions/set-external-id"
             )
             body = {
                 "filter": {"computerName": row[0]},
-                "data": {"externalId": customerIdentifierEntry.get()},
+                "data": {"externalId": customer_id_entry.get()},
             }
             response = requests.post(
                 url,
                 data=json.dumps(body),
                 headers=headers,
-                proxies={"http": proxy.get(), "https": proxy.get()},
-                verify=useSSL.get(),
+                proxies={"http": PROXY.get(), "https": PROXY.get()},
+                verify=USE_SSL.get(),
             )
             logger.debug(
                 "Making API Call with the following:\nURL: %s\tHeaders: %s\tProxy: %s\tUse SSL: %s",
                 url,
                 headers,
-                proxy.get(),
-                useSSL.get(),
+                PROXY.get(),
+                USE_SSL.get(),
             )
             if response.status_code != 200:
                 logger.error(
@@ -977,17 +991,17 @@ def assignCustomerIdentifier():
                     logger.info("Successfully updated the customer identifier")
             line_count += 1
         if line_count < 1:
-            logger.info("Finished! Input file %s was empty.", inputcsv.get())
+            logger.info("Finished! Input file %s was empty.", INPUT_CSV.get())
         else:
             logger.info("Finished! Processed %d lines.", line_count)
 
 
-def exportAllAgents():
+def export_all_agents():
     """Function to export a list of all Agents and details to CSV"""
     st = ScrolledText.ScrolledText(
-        master=exportEndpointsFrame, state="disabled", height=10
+        master=EXPORT_ENDPOINTS_FRAME, state="disabled", height=10
     )
-    st.configure(font=st_font)
+    st.configure(font=ST_FONT)
     st.grid(row=13, column=0, columnspan=2, pady=10)
     text_handler = TextHandler(st)
     logging.basicConfig(
@@ -999,15 +1013,15 @@ def exportAllAgents():
     logger.addHandler(text_handler)
 
     datestamp = datetime.datetime.now().strftime("%Y-%m-%d_%f")
-    logger.debug("User selected %s file type", endpointOutputType.get())
+    logger.debug("User selected %s file type", endpoint_output_type.get())
     output_file_name = f"Export_Endpoints_{datestamp}"
     csv_file = output_file_name + ".csv"
     xlsx_file = output_file_name + ".xlsx"
 
     firstrun = True
     url = (
-        hostname.get()
-        + f"/web/api/{api_version}/agents?{query_limits}&sortBy=computerName&sortOrder=asc"
+        HOSTNAME.get()
+        + f"/web/api/{API_VERSION}/agents?{QUERY_LIMITS}&sortBy=computerName&sortOrder=asc"
     )
 
     logger.info("Starting to request endpoint data.")
@@ -1015,15 +1029,15 @@ def exportAllAgents():
         response = requests.get(
             url,
             headers=headers,
-            proxies={"http": proxy.get(), "https": proxy.get()},
-            verify=useSSL.get(),
+            proxies={"http": PROXY.get(), "https": PROXY.get()},
+            verify=USE_SSL.get(),
         )
         logger.debug(
             "Making API Call with the following:\nURL: %s\tHeaders: %s\tProxy: %s\tUse SSL: %s",
             url,
             headers,
-            proxy.get(),
-            useSSL.get(),
+            PROXY.get(),
+            USE_SSL.get(),
         )
         if response.status_code != 200:
             logger.error(
@@ -1066,14 +1080,14 @@ def exportAllAgents():
                 f.writerow(tmp)
 
             if cursor:
-                paramsnext = f"/web/api/{api_version}/agents?{query_limits}&sortBy=computerName&sortOrder=asc&cursor={cursor}"
-                url = hostname.get() + paramsnext
+                paramsnext = f"/web/api/{API_VERSION}/agents?{QUERY_LIMITS}&sortBy=computerName&sortOrder=asc&cursor={cursor}"
+                url = HOSTNAME.get() + paramsnext
                 logger.debug("Next cursor found, updating URL: %s", url)
             else:
                 logger.debug("No cursor found, setting URL to None")
                 url = None
 
-    if endpointOutputType.get() == "xlsx":
+    if endpoint_output_type.get() == "xlsx":
         logger.info("Creating new XLSX: %s", xlsx_file)
         workbook = Workbook(xlsx_file)
         logger.debug("Adding new worksheet: 'Endpoints'")
@@ -1093,16 +1107,16 @@ def exportAllAgents():
         workbook.close()
 
     logger.info(
-        "Done! Output file is - %s.%s\n", output_file_name, endpointOutputType.get()
+        "Done! Output file is - %s.%s\n", output_file_name, endpoint_output_type.get()
     )
 
 
-def decommissionAgents():
+def decommission_agents():
     """Function to decommission specified agents via API"""
     st = ScrolledText.ScrolledText(
-        master=decommissionAgentsFrame, state="disabled", height=10
+        master=DECOMMISSION_AGENTS_FRAME, state="disabled", height=10
     )
-    st.configure(font=st_font)
+    st.configure(font=ST_FONT)
     st.grid(row=13, column=0, pady=10)
     text_handler = TextHandler(st)
     logging.basicConfig(
@@ -1113,29 +1127,29 @@ def decommissionAgents():
     logger = logging.getLogger()
     logger.addHandler(text_handler)
 
-    with open(inputcsv.get()) as csv_file:
-        logger.debug("Reading CSV: %s", inputcsv.get())
+    with open(INPUT_CSV.get()) as csv_file:
+        logger.debug("Reading CSV: %s", INPUT_CSV.get())
         csv_reader = csv.reader(csv_file, delimiter=",")
         line_count = 0
         for row in csv_reader:
             logger.info("Decommissioning Endpoint - %s", row[0])
             logger.info("Getting endpoint ID for %s", row[0])
             url = (
-                hostname.get()
-                + f"/web/api/{api_version}/agents?countOnly=false&computerName={row[0]}&{query_limits}"
+                HOSTNAME.get()
+                + f"/web/api/{API_VERSION}/agents?countOnly=false&computerName={row[0]}&{QUERY_LIMITS}"
             )
             response = requests.get(
                 url,
                 headers=headers,
-                proxies={"http": proxy.get(), "https": proxy.get()},
-                verify=useSSL.get(),
+                proxies={"http": PROXY.get(), "https": PROXY.get()},
+                verify=USE_SSL.get(),
             )
             logger.debug(
                 "Making API Call with the following:\nURL: %s\tHeaders: %s\tProxy: %s\tUse SSL: %s",
                 url,
                 headers,
-                proxy.get(),
-                useSSL.get(),
+                PROXY.get(),
+                USE_SSL.get(),
             )
             if response.status_code != 200:
                 logger.error(
@@ -1162,23 +1176,23 @@ def decommissionAgents():
                             "Found ID %s! Adding it to be decommissioned", item["id"]
                         )
                     url = (
-                        hostname.get()
-                        + f"/web/api/{api_version}/agents/actions/decommission"
+                        HOSTNAME.get()
+                        + f"/web/api/{API_VERSION}/agents/actions/decommission"
                     )
                     body = {"filter": {"ids": uuidslist}}
                     response = requests.post(
                         url,
                         data=json.dumps(body),
                         headers=headers,
-                        proxies={"http": proxy.get(), "https": proxy.get()},
-                        verify=useSSL.get(),
+                        proxies={"http": PROXY.get(), "https": PROXY.get()},
+                        verify=USE_SSL.get(),
                     )
                     logger.debug(
                         "Making API Call with the following:\nURL: %s\tHeaders: %s\tProxy: %s\tUse SSL: %s",
                         url,
                         headers,
-                        proxy.get(),
-                        useSSL.get(),
+                        PROXY.get(),
+                        USE_SSL.get(),
                     )
                     if response.status_code != 200:
                         logger.error(
@@ -1202,17 +1216,17 @@ def decommissionAgents():
                             logger.info("Successfully decommissioned the endpoint")
             line_count += 1
         if line_count < 1:
-            logger.info("Finished! Input file %s was empty.", inputcsv.get())
+            logger.info("Finished! Input file %s was empty.", INPUT_CSV.get())
         else:
             logger.info("Finished! Processed %d lines.", line_count)
 
 
-def exportExclusions():
+def export_exclusions():
     """Function to export Exclusions to CSV"""
     st = ScrolledText.ScrolledText(
-        master=exportExclusionsFrame, state="disabled", height=10
+        master=EXPORT_EXCLUSIONS_FRAME, state="disabled", height=10
     )
-    st.configure(font=st_font)
+    st.configure(font=ST_FONT)
     st.grid(row=13, column=0, pady=10)
     text_handler = TextHandler(st)
     logging.basicConfig(
@@ -1226,18 +1240,18 @@ def exportExclusions():
     async def getAccounts(session):
         logger.info("Getting accounts data")
         params = (
-            f"/web/api/{api_version}/accounts?{query_limits}"
+            f"/web/api/{API_VERSION}/accounts?{QUERY_LIMITS}"
             + "&countOnly=false&tenant=true"
         )
-        url = hostname.get() + params
+        url = HOSTNAME.get() + params
         while url:
-            async with session.get(url, headers=headers, proxy=proxy.get()) as response:
+            async with session.get(url, headers=headers, proxy=PROXY.get()) as response:
                 logger.debug(
                     "Making API Call with the following:\nURL: %s\tHeaders: %s\tProxy: %s\tUse SSL: %s",
                     url,
                     headers,
-                    proxy.get(),
-                    useSSL.get(),
+                    PROXY.get(),
+                    USE_SSL.get(),
                 )
                 if response.status != 200:
                     logger.error(
@@ -1256,8 +1270,8 @@ def exportExclusions():
                         for account in data:
                             dictAccounts[account["id"]] = account["name"]
                     if cursor:
-                        paramsnext = f"/web/api/{api_version}/accounts?{query_limits}&cursor={cursor}&countOnly=false&tenant=true"
-                        url = hostname.get() + paramsnext
+                        paramsnext = f"/web/api/{API_VERSION}/accounts?{QUERY_LIMITS}&cursor={cursor}&countOnly=false&tenant=true"
+                        url = HOSTNAME.get() + paramsnext
                         logger.debug("Found next cursor: %s", cursor)
                     else:
                         logger.debug("No cursor found, setting URL to None")
@@ -1266,17 +1280,17 @@ def exportExclusions():
     async def getSites(session):
         logger.info("Getting sites data")
         params = (
-            f"/web/api/{api_version}/sites?{query_limits}&countOnly=false&tenant=true"
+            f"/web/api/{API_VERSION}/sites?{QUERY_LIMITS}&countOnly=false&tenant=true"
         )
-        url = hostname.get() + params
+        url = HOSTNAME.get() + params
         while url:
-            async with session.get(url, headers=headers, proxy=proxy.get()) as response:
+            async with session.get(url, headers=headers, proxy=PROXY.get()) as response:
                 logger.debug(
                     "Making API Call with the following:\nURL: %s\tHeaders: %s\tProxy: %s\tUse SSL: %s",
                     url,
                     headers,
-                    proxy.get(),
-                    useSSL.get(),
+                    PROXY.get(),
+                    USE_SSL.get(),
                 )
                 if response.status != 200:
                     logger.error(
@@ -1294,8 +1308,8 @@ def exportExclusions():
                         for site in data["sites"]:
                             dictSites[site["id"]] = site["name"]
                     if cursor:
-                        paramsnext = f"/web/api/{api_version}/sites?{query_limits}&cursor={cursor}&countOnly=false&tenant=true"
-                        url = hostname.get() + paramsnext
+                        paramsnext = f"/web/api/{API_VERSION}/sites?{QUERY_LIMITS}&cursor={cursor}&countOnly=false&tenant=true"
+                        url = HOSTNAME.get() + paramsnext
                         logger.debug("Found next cursor: %s", cursor)
                     else:
                         logger.debug("No cursor found, setting URL to None")
@@ -1304,17 +1318,17 @@ def exportExclusions():
     async def getGroups(session):
         logger.info("Getting groups data")
         params = (
-            f"/web/api/{api_version}/groups?{query_limits}&countOnly=false&tenant=true"
+            f"/web/api/{API_VERSION}/groups?{QUERY_LIMITS}&countOnly=false&tenant=true"
         )
-        url = hostname.get() + params
+        url = HOSTNAME.get() + params
         while url:
-            async with session.get(url, headers=headers, proxy=proxy.get()) as response:
+            async with session.get(url, headers=headers, proxy=PROXY.get()) as response:
                 logger.debug(
                     "Making API Call with the following:\nURL: %s\tHeaders: %s\tProxy: %s\tUse SSL: %s",
                     url,
                     headers,
-                    proxy.get(),
-                    useSSL.get(),
+                    PROXY.get(),
+                    USE_SSL.get(),
                 )
                 if response.status != 200:
                     logger.error(
@@ -1332,8 +1346,8 @@ def exportExclusions():
                         for group in data:
                             dictGroups[group["id"]] = group["name"]
                     if cursor:
-                        paramsnext = f"/web/api/{api_version}/groups?{query_limits}&cursor={cursor}&countOnly=false&tenant=true"
-                        url = hostname.get() + paramsnext
+                        paramsnext = f"/web/api/{API_VERSION}/groups?{QUERY_LIMITS}&cursor={cursor}&countOnly=false&tenant=true"
+                        url = HOSTNAME.get() + paramsnext
                         logger.debug("Found next cursor: %s", cursor)
                     else:
                         logger.debug("No cursor found, setting URL to None")
@@ -1346,16 +1360,16 @@ def exportExclusions():
         firstrunfile = True
         firstrunhash = True
         logger.debug("Getting exceptions and writing to CSV")
-        params = f"/web/api/{api_version}/exclusions?{query_limits}&type={querytype}&countOnly=false"
-        url = hostname.get() + params + exparam
+        params = f"/web/api/{API_VERSION}/exclusions?{QUERY_LIMITS}&type={querytype}&countOnly=false"
+        url = HOSTNAME.get() + params + exparam
         while url:
-            async with session.get(url, headers=headers, proxy=proxy.get()) as response:
+            async with session.get(url, headers=headers, proxy=PROXY.get()) as response:
                 logger.debug(
                     "Making API Call with the following:\nURL: %s\tHeaders: %s\tProxy: %s\tUse SSL: %s",
                     url,
                     headers,
-                    proxy.get(),
-                    useSSL.get(),
+                    PROXY.get(),
+                    USE_SSL.get(),
                 )
                 if response.status != 200:
                     logger.error(
@@ -1482,8 +1496,8 @@ def exportExclusions():
                                 f.writerow(tmp)
 
                     if cursor:
-                        paramsnext = f"/web/api/{api_version}/exclusions?{query_limits}&type={querytype}&countOnly=false&cursor={cursor}"
-                        url = hostname.get() + paramsnext + exparam
+                        paramsnext = f"/web/api/{API_VERSION}/exclusions?{QUERY_LIMITS}&type={querytype}&countOnly=false&cursor={cursor}"
+                        url = HOSTNAME.get() + paramsnext + exparam
                         logger.debug("Found next cursor: %s", cursor)
                     else:
                         logger.debug("No cursor found, setting URL to None")
@@ -1690,18 +1704,18 @@ def exportExclusions():
 
     def getScope():
         logger.info("Getting user scope access")
-        url = hostname.get() + f"/web/api/{api_version}/user"
+        url = HOSTNAME.get() + f"/web/api/{API_VERSION}/user"
         r = requests.get(
             url,
             headers=headers,
-            proxies={"http": proxy},
+            proxies={"http": PROXY},
         )
         logger.debug(
             "Making API Call with the following:\nURL: %s\tHeaders: %s\tProxy: %s\tUse SSL: %s",
             url,
             headers,
-            proxy.get(),
-            useSSL.get(),
+            PROXY.get(),
+            USE_SSL.get(),
         )
         if r.status_code == 200:
             data = r.json()
@@ -1719,7 +1733,7 @@ def exportExclusions():
     tokenscope = getScope()
 
     if tokenscope != "site":
-        logger.info("Getting account/site/group structure for %s", hostname.get())
+        logger.info("Getting account/site/group structure for %s", HOSTNAME.get())
         loop = asyncio.get_event_loop()
         loop.run_until_complete(runAccounts())
 
@@ -1785,12 +1799,12 @@ def exportExclusions():
     logger.info("Done! Created the file %s\n", xlsx_filename)
 
 
-def exportEndpointTags():
+def export_endpoint_tags():
     """Function to export Endpoint Tags from Console"""
     st = ScrolledText.ScrolledText(
-        master=exportEndpointTagsFrame, state="disabled", height=10
+        master=EXPORT_ENDPOINT_TAGS_FRAME, state="disabled", height=10
     )
-    st.configure(font=st_font)
+    st.configure(font=ST_FONT)
     st.grid(row=13, column=0, pady=10)
     text_handler = TextHandler(st)
     logging.basicConfig(
@@ -1806,22 +1820,22 @@ def exportEndpointTags():
     f = csv.writer(open(export_csv, "a+", newline="", encoding="utf-8"))
     firstrun = True
     url = (
-        hostname.get()
-        + f"/web/api/{api_version}/agents/tags?includeChildren=true&includeParents=true&{query_limits}"
+        HOSTNAME.get()
+        + f"/web/api/{API_VERSION}/agents/tags?includeChildren=true&includeParents=true&{QUERY_LIMITS}"
     )
     while url:
         response = requests.get(
             url,
             headers=headers,
-            proxies={"http": proxy.get(), "https": proxy.get()},
-            verify=useSSL.get(),
+            proxies={"http": PROXY.get(), "https": PROXY.get()},
+            verify=USE_SSL.get(),
         )
         logger.debug(
             "Making API Call with the following:\nURL: %s\tHeaders: %s\tProxy: %s\tUse SSL: %s",
             url,
             headers,
-            proxy.get(),
-            useSSL.get(),
+            PROXY.get(),
+            USE_SSL.get(),
         )
         if response.status_code != 200:
             logger.error(
@@ -1854,8 +1868,8 @@ def exportEndpointTags():
                         tmp.append(value)
                     f.writerow(tmp)
             if cursor:
-                paramsnext = f"/web/api/{api_version}/agents/tags?includeChildren=true&includeParents=true&{query_limits}&cursor={cursor}"
-                url = hostname.get() + paramsnext
+                paramsnext = f"/web/api/{API_VERSION}/agents/tags?includeChildren=true&includeParents=true&{QUERY_LIMITS}&cursor={cursor}"
+                url = HOSTNAME.get() + paramsnext
                 logger.debug("Next cursor found, updating URL: %s", url)
             else:
                 logger.debug("No cursor found, setting URL to None")
@@ -1863,12 +1877,12 @@ def exportEndpointTags():
     logger.info("Done! Output file is - %s\n", export_csv)
 
 
-def manageEndpointTags():
+def manage_endpoint_tags():
     """Add or Remove Endpoint Tags from Agents"""
     st = ScrolledText.ScrolledText(
-        master=manageEndpointTagsFrame, state="disabled", height=10
+        master=MANAGE_ENDPOINT_TAGS_FRAME, state="disabled", height=10
     )
-    st.configure(font=st_font)
+    st.configure(font=ST_FONT)
     st.grid(row=13, column=0, columnspan=2, pady=10)
     text_handler = TextHandler(st)
     logging.basicConfig(
@@ -1880,23 +1894,26 @@ def manageEndpointTags():
     logger.addHandler(text_handler)
 
     id_type = "computerName"
-    if agentIDType.get() == "uuid":
+    if agent_id_type.get() == "uuid":
         id_type = "uuid"
 
     logger.debug("Specified an ID type of: %s", id_type)
 
-    with open(inputcsv.get()) as csv_file:
-        logger.debug("Reading CSV: %s", inputcsv.get())
+    with open(INPUT_CSV.get()) as csv_file:
+        logger.debug("Reading CSV: %s", INPUT_CSV.get())
         csv_reader = csv.reader(csv_file, delimiter=",")
         line_count = 0
 
         for row in csv_reader:
             logger.info("Updating Endpoint Tags for %s", row[0])
-            url = hostname.get() + f"/web/api/{api_version}/agents/actions/manage-tags"
+            url = HOSTNAME.get() + f"/web/api/{API_VERSION}/agents/actions/manage-tags"
             body = {
                 "filter": {id_type: row[0]},
                 "data": [
-                    {"operation": endpointTagsAction.get(), "tagId": tagIDEntry.get()}
+                    {
+                        "operation": endpoint_tags_action.get(),
+                        "tagId": tag_id_entry.get(),
+                    }
                 ],
             }
             logger.debug(
@@ -1904,15 +1921,15 @@ def manageEndpointTags():
                 url,
                 json.dumps(body),
                 headers,
-                proxy.get(),
-                useSSL.get(),
+                PROXY.get(),
+                USE_SSL.get(),
             )
             response = requests.post(
                 url,
                 data=json.dumps(body),
                 headers=headers,
-                proxies={"http": proxy.get(), "https": proxy.get()},
-                verify=useSSL.get(),
+                proxies={"http": PROXY.get(), "https": PROXY.get()},
+                verify=USE_SSL.get(),
             )
             if response.status_code != 200:
                 logger.error(
@@ -1930,17 +1947,17 @@ def manageEndpointTags():
                     logger.info("Successfully updated the Endpoint Tag")
             line_count += 1
         if line_count < 1:
-            logger.info("Finished! Input file %s was empty.", inputcsv.get())
+            logger.info("Finished! Input file %s was empty.", INPUT_CSV.get())
         else:
             logger.info("Finished! Processed %d lines.", line_count)
 
 
-def exportLocalConfig():
+def export_local_config():
     """Export Agent Local Config"""
     st = ScrolledText.ScrolledText(
-        master=exportLocalConfigFrame, state="disabled", height=10
+        master=EXPORT_LOCAL_CONFIG_FRAME, state="disabled", height=10
     )
-    st.configure(font=st_font)
+    st.configure(font=ST_FONT)
     st.grid(row=13, column=0, pady=10)
     text_handler = TextHandler(st)
     logging.basicConfig(
@@ -1954,13 +1971,13 @@ def exportLocalConfig():
     datestamp = datetime.datetime.now().strftime("%Y-%m-%d_%f")
     json_file = f"Local_Config_Export_{datestamp}.json"
 
-    with open(inputcsv.get()) as csv_file:
-        logger.debug("Reading CSV: %s", inputcsv.get())
+    with open(INPUT_CSV.get()) as csv_file:
+        logger.debug("Reading CSV: %s", INPUT_CSV.get())
         csv_reader = csv.reader(csv_file, delimiter=",")
 
         for row in csv_reader:
             logger.info("Getting Agent ID for Agent UUID: %s", row[0])
-            url = hostname.get() + f"/web/api/{api_version}/agents"
+            url = HOSTNAME.get() + f"/web/api/{API_VERSION}/agents"
             agent_id = ""
             agent_config = ""
             param = {"uuid": row[0]}
@@ -1968,16 +1985,16 @@ def exportLocalConfig():
                 url,
                 params=param,
                 headers=headers,
-                proxies={"http": proxy.get(), "https": proxy.get()},
-                verify=useSSL.get(),
+                proxies={"http": PROXY.get(), "https": PROXY.get()},
+                verify=USE_SSL.get(),
             )
             logger.debug(
                 "Making API Call with the following:\nURL: %s\tParams: %s\tHeaders: %s\tProxy: %s\tUse SSL: %s",
                 url,
                 param,
                 headers,
-                proxy.get(),
-                useSSL.get(),
+                PROXY.get(),
+                USE_SSL.get(),
             )
             if response.status_code != 200:
                 logger.error(
@@ -1998,24 +2015,24 @@ def exportLocalConfig():
 
             logger.info("Getting Agent Config for Agent ID: %s", agent_id)
             url = (
-                hostname.get()
-                + f"/web/api/{api_version}/private/agents/{agent_id}/support-actions/configuration"
+                HOSTNAME.get()
+                + f"/web/api/{API_VERSION}/private/agents/{agent_id}/support-actions/configuration"
             )
 
             response = requests.get(
                 url,
                 params={},
                 headers=headers,
-                proxies={"http": proxy.get(), "https": proxy.get()},
-                verify=useSSL.get(),
+                proxies={"http": PROXY.get(), "https": PROXY.get()},
+                verify=USE_SSL.get(),
             )
             logger.debug(
                 "Making API Call with the following:\nURL: %s\tParams: %s\tHeaders: %s\tProxy: %s\tUse SSL: %s",
                 url,
                 param,
                 headers,
-                proxy.get(),
-                useSSL.get(),
+                PROXY.get(),
+                USE_SSL.get(),
             )
             if response.status_code != 200:
                 logger.error(
@@ -2042,10 +2059,12 @@ def exportLocalConfig():
     logger.info("Done! Output file is - %s\n", json_file)
 
 
-def exportUsers():
+def export_users():
     """Function to handle getting User Details and writing to CSV or XLSX"""
-    st = ScrolledText.ScrolledText(master=exportUsersFrame, state="disabled", height=10)
-    st.configure(font=st_font)
+    st = ScrolledText.ScrolledText(
+        master=EXPORT_USERS_FRAME, state="disabled", height=10
+    )
+    st.configure(font=ST_FONT)
     st.grid(row=13, column=0, columnspan=2, pady=10)
     text_handler = TextHandler(st)
     logging.basicConfig(
@@ -2057,7 +2076,7 @@ def exportUsers():
     logger.addHandler(text_handler)
 
     datestamp = datetime.datetime.now().strftime("%Y-%m-%d_%f")
-    logger.debug("User selected %s file type", userOutputType.get())
+    logger.debug("User selected %s file type", user_output_type.get())
     output_file_name = f"Export_Users_{datestamp}"
     csv_file = output_file_name + ".csv"
     xlsx_file = output_file_name + ".xlsx"
@@ -2086,8 +2105,8 @@ def exportUsers():
     ]
 
     url = (
-        hostname.get()
-        + f"/web/api/{api_version}/users?{query_limits}&sortOrder=asc&sortBy=email"
+        HOSTNAME.get()
+        + f"/web/api/{API_VERSION}/users?{QUERY_LIMITS}&sortOrder=asc&sortBy=email"
     )
     first_run = True
     total_users = 0
@@ -2098,15 +2117,15 @@ def exportUsers():
         response = requests.get(
             url,
             headers=headers,
-            proxies={"http": proxy.get(), "https": proxy.get()},
-            verify=useSSL.get(),
+            proxies={"http": PROXY.get(), "https": PROXY.get()},
+            verify=USE_SSL.get(),
         )
         logger.debug(
             "Making API Call with the following:\nURL: %s\tHeaders: %s\tProxy: %s\tUse SSL: %s",
             url,
             headers,
-            proxy.get(),
-            useSSL.get(),
+            PROXY.get(),
+            USE_SSL.get(),
         )
         if response.status_code != 200:
             logger.error(
@@ -2170,14 +2189,14 @@ def exportUsers():
                     )
 
             if cursor:
-                paramsnext = f"/web/api/{api_version}/users?{query_limits}&sortOrder=asc&sortBy=email&cursor={cursor}"
-                url = hostname.get() + paramsnext
+                paramsnext = f"/web/api/{API_VERSION}/users?{QUERY_LIMITS}&sortOrder=asc&sortBy=email&cursor={cursor}"
+                url = HOSTNAME.get() + paramsnext
                 logger.debug("Next cursor found, updating URL: %s", url)
             else:
                 logger.debug("No cursor found, setting URL to None")
                 url = None
 
-    if userOutputType.get() == "xlsx":
+    if user_output_type.get() == "xlsx":
         logger.debug("Creating new XLSX: %s", xlsx_file)
         workbook = Workbook(xlsx_file)
         logger.debug("Adding new worksheet: 'Users'")
@@ -2197,16 +2216,16 @@ def exportUsers():
         workbook.close()
 
     logger.info(
-        "Done! Output file is - %s.%s\n", output_file_name, userOutputType.get()
+        "Done! Output file is - %s.%s\n", output_file_name, user_output_type.get()
     )
 
 
 def export_ranger():
     """Function to handle exporting Ranger Inventory to CSV"""
     st = ScrolledText.ScrolledText(
-        master=exportRangerInvFrame, state="disabled", height=10
+        master=EXPORT_RANGER_INV_FRAME, state="disabled", height=10
     )
-    st.configure(font=st_font)
+    st.configure(font=ST_FONT)
     st.grid(row=13, column=0, columnspan=2, pady=10)
     text_handler = TextHandler(st)
     logging.basicConfig(
@@ -2217,13 +2236,13 @@ def export_ranger():
     logger = logging.getLogger()
     logger.addHandler(text_handler)
 
-    export_scope = exportRangerScope.get()
-    ranger_time_period = exportRangerTimePeriod.get()
+    export_scope = export_ranger_scope.get()
+    ranger_time_period = export_ranger_timeperiod.get()
     if export_scope == "sites":
         scope_param = "siteIds"
     else:
         scope_param = "accountIds"
-    if not inputcsv.get():
+    if not INPUT_CSV.get():
         logger.error("Must select a CSV containing Account or Site IDs")
 
     datestamp = datetime.datetime.now().strftime("%Y-%m-%d")
@@ -2231,12 +2250,12 @@ def export_ranger():
     logger.debug(
         "Input options:\n\tScope: %s\n\tScope ID CSV: %s\n\tTime Period: %s",
         export_scope,
-        inputcsv.get(),
+        INPUT_CSV.get(),
         ranger_time_period,
     )
 
-    with open(inputcsv.get()) as csv_file:
-        logger.debug("Reading CSV: %s", inputcsv.get())
+    with open(INPUT_CSV.get()) as csv_file:
+        logger.debug("Reading CSV: %s", INPUT_CSV.get())
         csv_reader = csv.reader(csv_file, delimiter=",")
         for row in csv_reader:
             logger.info(
@@ -2245,21 +2264,21 @@ def export_ranger():
                 row[0],
             )
             firstrun = True
-            endpoint = f"/web/api/{api_version}/ranger/table-view?{query_limits}&period={ranger_time_period}&{scope_param}={row[0]}"
-            url = hostname.get() + endpoint
+            endpoint = f"/web/api/{API_VERSION}/ranger/table-view?{QUERY_LIMITS}&period={ranger_time_period}&{scope_param}={row[0]}"
+            url = HOSTNAME.get() + endpoint
             while url:
                 logger.debug(
                     "Making API Call with the following:\nURL: %s\tHeaders: %s\tProxy: %s\tUse SSL: %s",
                     url,
                     headers,
-                    proxy.get(),
-                    useSSL.get(),
+                    PROXY.get(),
+                    USE_SSL.get(),
                 )
                 response = requests.get(
                     url,
                     headers=headers,
-                    proxies={"http": proxy.get(), "https": proxy.get()},
-                    verify=useSSL.get(),
+                    proxies={"http": PROXY.get(), "https": PROXY.get()},
+                    verify=USE_SSL.get(),
                 )
                 if response.status_code != 200:
                     logger.error(
@@ -2297,7 +2316,7 @@ def export_ranger():
                             f.writerow(tmp)
                     if cursor:
                         paramsnext = endpoint + f"&cursor={cursor}"
-                        url = hostname.get() + paramsnext
+                        url = HOSTNAME.get() + paramsnext
                         logger.debug("Next cursor found, updating URL: %s", url)
                     else:
                         logger.debug("No cursor found, setting URL to None")
@@ -2306,126 +2325,124 @@ def export_ranger():
         logger.info("Done exporting Ranger Inventory.")
 
 
-def selectCSVFile():
-    """Basic function to present user with browse window to source a CSV file for input"""
-    file = tkinter.filedialog.askopenfilename()
-    inputcsv.set(file)
-
-
 # Login Menu Frame #############################
-tk.Label(master=loginMenuFrame, image=logo).grid(row=0, column=0, columnspan=1, pady=20)
+tk.Label(master=LOGIN_MENU_FRAME, image=LOGO).grid(
+    row=0, column=0, columnspan=1, pady=20
+)
 
-consoleAddressLabel = tk.Label(
-    master=loginMenuFrame,
+console_address_label = tk.Label(
+    master=LOGIN_MENU_FRAME,
     text="Management Console URL:",
 )
-consoleAddressLabel.grid(row=1, column=0, pady=2)
+console_address_label.grid(row=1, column=0, pady=2)
 
-consoleAddressEntry = ttk.Entry(master=loginMenuFrame, width=80)
-consoleAddressEntry.grid(row=2, column=0, pady=2)
+console_address_entry = ttk.Entry(master=LOGIN_MENU_FRAME, width=80)
+console_address_entry.grid(row=2, column=0, pady=2)
 
-apikTokenLabel = tk.Label(master=loginMenuFrame, text="API Token:")
-apikTokenLabel.grid(row=3, column=0, pady=(10, 2))
+api_token_label = tk.Label(master=LOGIN_MENU_FRAME, text="API Token:")
+api_token_label.grid(row=3, column=0, pady=(10, 2))
 
-apikTokenEntry = ttk.Entry(master=loginMenuFrame, width=80)
-apikTokenEntry.grid(row=4, column=0, pady=2)
+api_token_entry = ttk.Entry(master=LOGIN_MENU_FRAME, width=80)
+api_token_entry.grid(row=4, column=0, pady=2)
 
 tk.Label(
-    master=loginMenuFrame,
+    master=LOGIN_MENU_FRAME,
     text="*API Token provided must have sufficient permissions to perform a given action.",
-    font=frame_subnote_font,
+    font=FRAME_SUBNOTE_FONT,
 ).grid(row=5, column=0, pady=5)
 
-proxyLabel = tk.Label(
-    master=loginMenuFrame,
+proxy_label = tk.Label(
+    master=LOGIN_MENU_FRAME,
     text="Proxy (if required):",
 )
-proxyLabel.grid(row=6, column=0, pady=(10, 2))
+proxy_label.grid(row=6, column=0, pady=(10, 2))
 
-proxyEntry = ttk.Entry(master=loginMenuFrame, width=80)
+proxy_entry = ttk.Entry(master=LOGIN_MENU_FRAME, width=80)
 
-proxyEntry.grid(row=7, column=0, pady=2)
+proxy_entry.grid(row=7, column=0, pady=2)
 
-useSSLSwitch = ttk.Checkbutton(
-    master=loginMenuFrame,
+use_ssl_switch = ttk.Checkbutton(
+    master=LOGIN_MENU_FRAME,
     text="Use SSL",
     style="Switch",
-    variable=useSSL,
+    variable=USE_SSL,
     onvalue=True,
     offvalue=False,
 )
-useSSLSwitch.grid(row=8, column=0, pady=10)
+use_ssl_switch.grid(row=8, column=0, pady=10)
 
-loginButton = ttk.Button(master=loginMenuFrame, text="Login", command=login)
-loginButton.grid(row=9, column=0, columnspan=2, ipady=5, pady=10)
+login_button = ttk.Button(master=LOGIN_MENU_FRAME, text="Login", command=login)
+login_button.grid(row=9, column=0, columnspan=2, ipady=5, pady=10)
 
 if LOG_LEVEL == logging.DEBUG:
     ttk.Label(
-        master=loginMenuFrame,
+        master=LOGIN_MENU_FRAME,
         text=f"S1 Manager launched with --debug. Be sure to delete {LOG_NAME} when finished.",
-        font=frame_subnote_font,
-        foreground=frame_note_fg_color,
+        font=FRAME_SUBNOTE_FONT,
+        foreground=FRAME_NOTE_FG_COLOR,
     ).grid(row=10, column=0, pady=10, ipadx=5, ipady=5)
 
 tk.Label(
-    master=loginMenuFrame,
-    text=f"SentinelOne API: {api_version}\tS1 Manager: v{__version__}",
+    master=LOGIN_MENU_FRAME,
+    text=f"SentinelOne API: {API_VERSION}\tS1 Manager: v{__version__}",
 ).grid(row=12, column=0, pady=(10, 5), sticky="s")
-loginMenuFrame.pack()
+LOGIN_MENU_FRAME.pack()
 
 # Main Menu Frame #############################
-tk.Label(master=mainMenuFrame, image=logo).grid(row=0, column=0, columnspan=4, pady=20)
+tk.Label(master=MAIN_MENU_FRAME, image=LOGO).grid(
+    row=0, column=0, columnspan=4, pady=20
+)
 
 # Export - Column 0
 ttk.Label(
-    master=mainMenuFrame, text="Export Operations", font=frame_subtitle_font_underline
+    master=MAIN_MENU_FRAME, text="Export Operations", font=FRAME_SUBTITLE_FONT_UNDERLINE
 ).grid(row=1, column=0, columnspan=2, pady=20)
 ttk.Button(
-    master=mainMenuFrame,
+    master=MAIN_MENU_FRAME,
     text="Export Deep Visiblity Events",
-    command=partial(switchFrames, exportFromDVFrame),
+    command=partial(switch_frames, EXPORT_FROM_DV_FRAME),
     width=32,
 ).grid(row=2, column=0, sticky="ew", ipady=5, pady=5, padx=5)
 ttk.Button(
-    master=mainMenuFrame,
+    master=MAIN_MENU_FRAME,
     text="Export Activity Log",
-    command=partial(switchFrames, exportActivityLogFrame),
+    command=partial(switch_frames, EXPORT_ACTIVITY_LOG_FRAME),
     width=32,
 ).grid(row=3, column=0, sticky="ew", ipady=5, pady=5, padx=5)
 ttk.Button(
-    master=mainMenuFrame,
+    master=MAIN_MENU_FRAME,
     text="Export Endpoints",
-    command=partial(switchFrames, exportEndpointsFrame),
+    command=partial(switch_frames, EXPORT_ENDPOINTS_FRAME),
     width=32,
 ).grid(row=4, column=0, sticky="ew", ipady=5, pady=5, padx=5)
 ttk.Button(
-    master=mainMenuFrame,
+    master=MAIN_MENU_FRAME,
     text="Export Exclusions",
-    command=partial(switchFrames, exportExclusionsFrame),
+    command=partial(switch_frames, EXPORT_EXCLUSIONS_FRAME),
     width=32,
 ).grid(row=5, column=0, sticky="ew", ipady=5, pady=5, padx=5)
 ttk.Button(
-    master=mainMenuFrame,
+    master=MAIN_MENU_FRAME,
     text="Export Endpoint Tags",
-    command=partial(switchFrames, exportEndpointTagsFrame),
+    command=partial(switch_frames, EXPORT_ENDPOINT_TAGS_FRAME),
     width=32,
 ).grid(row=6, column=0, sticky="ew", ipady=5, pady=5, padx=5)
 ttk.Button(
-    master=mainMenuFrame,
+    master=MAIN_MENU_FRAME,
     text="Export Local Config",
-    command=partial(switchFrames, exportLocalConfigFrame),
+    command=partial(switch_frames, EXPORT_LOCAL_CONFIG_FRAME),
     width=32,
 ).grid(row=2, column=1, sticky="ew", ipady=5, pady=5, padx=5)
 ttk.Button(
-    master=mainMenuFrame,
+    master=MAIN_MENU_FRAME,
     text="Export Users",
-    command=partial(switchFrames, exportUsersFrame),
+    command=partial(switch_frames, EXPORT_USERS_FRAME),
     width=32,
 ).grid(row=3, column=1, sticky="ew", ipady=5, pady=5, padx=5)
 ttk.Button(
-    master=mainMenuFrame,
+    master=MAIN_MENU_FRAME,
     text="Export Ranger Inventory",
-    command=partial(switchFrames, exportRangerInvFrame),
+    command=partial(switch_frames, EXPORT_RANGER_INV_FRAME),
     width=32,
 ).grid(row=4, column=1, sticky="ew", ipady=5, pady=5, padx=5)
 # ttk.Button(
@@ -2443,36 +2460,36 @@ ttk.Button(
 
 # Manage - Column 2
 tk.Label(
-    master=mainMenuFrame, text="Manage Operations", font=frame_subtitle_font_underline
+    master=MAIN_MENU_FRAME, text="Manage Operations", font=FRAME_SUBTITLE_FONT_UNDERLINE
 ).grid(row=1, column=2, columnspan=2, pady=20)
 ttk.Button(
-    master=mainMenuFrame,
+    master=MAIN_MENU_FRAME,
     text="Upgrade Agents",
-    command=partial(switchFrames, upgradeFromCSVFrame),
+    command=partial(switch_frames, UPGRADE_FROM_CSV_FRAME),
     width=32,
 ).grid(row=2, column=2, sticky="ew", ipady=5, pady=5, padx=5)
 ttk.Button(
-    master=mainMenuFrame,
+    master=MAIN_MENU_FRAME,
     text="Move Agents",
-    command=partial(switchFrames, moveAgentsFrame),
+    command=partial(switch_frames, MOVE_AGENTS_FRAME),
     width=32,
 ).grid(row=3, column=2, sticky="ew", ipady=5, pady=5, padx=5)
 ttk.Button(
-    master=mainMenuFrame,
+    master=MAIN_MENU_FRAME,
     text="Assign Customer Identifier",
-    command=partial(switchFrames, assignCustomerIdentifierFrame),
+    command=partial(switch_frames, ASSIGN_CUSTOMER_ID_FRAME),
     width=32,
 ).grid(row=4, column=2, sticky="ew", ipady=5, pady=5, padx=5)
 ttk.Button(
-    master=mainMenuFrame,
+    master=MAIN_MENU_FRAME,
     text="Decommission Agents",
-    command=partial(switchFrames, decommissionAgentsFrame),
+    command=partial(switch_frames, DECOMMISSION_AGENTS_FRAME),
     width=32,
 ).grid(row=5, column=2, sticky="ew", ipady=5, pady=5, padx=5)
 ttk.Button(
-    master=mainMenuFrame,
+    master=MAIN_MENU_FRAME,
     text="Manage Endpoint Tags",
-    command=partial(switchFrames, manageEndpointTagsFrame),
+    command=partial(switch_frames, MANAGE_ENDPOINT_TAGS_FRAME),
     width=32,
 ).grid(row=6, column=2, sticky="ew", ipady=5, pady=5, padx=5)
 # ttk.Button(
@@ -2508,521 +2525,532 @@ ttk.Button(
 
 if LOG_LEVEL == logging.DEBUG:
     ttk.Label(
-        master=mainMenuFrame,
+        master=MAIN_MENU_FRAME,
         text=f"S1 Manager launched with --debug. Be sure to delete {LOG_NAME} when finished.",
-        font=frame_subnote_font,
-        foreground=frame_note_fg_color,
+        font=FRAME_SUBNOTE_FONT,
+        foreground=FRAME_NOTE_FG_COLOR,
     ).grid(row=10, column=0, columnspan=4, pady=10, ipadx=5, ipady=5)
 
 tk.Label(
-    master=mainMenuFrame,
+    master=MAIN_MENU_FRAME,
     text="Note: Many of the processes can take a while to run. Be patient.",
-    font=frame_subnote_font,
+    font=FRAME_SUBNOTE_FONT,
 ).grid(row=11, column=0, columnspan=4, padx=20, pady=20, sticky="s")
 
 
 # Export from DV Frame #############################
 tk.Label(
-    master=exportFromDVFrame,
+    master=EXPORT_FROM_DV_FRAME,
     text="Export Deep Visiblity Events",
-    font=frame_title_font,
+    font=FRAME_TITLE_FONT,
 ).grid(row=0, column=0, padx=20, pady=20)
 tk.Label(
-    master=exportFromDVFrame,
+    master=EXPORT_FROM_DV_FRAME,
     text="Export Deep Visibility events to an XLSX by query ID as reference",
-    font=frame_subtitle_font,
+    font=FRAME_SUBTITLE_FONT,
 ).grid(row=1, column=0, padx=20, pady=10)
-tk.Label(master=exportFromDVFrame, text="1. Input Deep Visibility Query ID").grid(
+tk.Label(master=EXPORT_FROM_DV_FRAME, text="1. Input Deep Visibility Query ID").grid(
     row=2, column=0, pady=2
 )
-queryIdEntry = ttk.Entry(master=exportFromDVFrame, width=80)
-queryIdEntry.grid(row=3, column=0, pady=10)
+query_id_entry = ttk.Entry(master=EXPORT_FROM_DV_FRAME, width=80)
+query_id_entry.grid(row=3, column=0, pady=10)
 ttk.Button(
-    master=exportFromDVFrame,
+    master=EXPORT_FROM_DV_FRAME,
     text="Export",
-    command=exportFromDV,
+    command=export_from_dv,
 ).grid(row=4, column=0, pady=10)
 ttk.Button(
-    master=exportFromDVFrame,
+    master=EXPORT_FROM_DV_FRAME,
     text="Back to Main Menu",
-    command=goBacktoMainPage,
+    command=go_back_to_mainpage,
 ).grid(row=5, column=0, ipadx=10, pady=10)
 
 
 # Search and Export Activity Log Frame #############################
 tk.Label(
-    master=exportActivityLogFrame,
+    master=EXPORT_ACTIVITY_LOG_FRAME,
     text="Search and Export Activity Log",
-    font=frame_title_font,
+    font=FRAME_TITLE_FONT,
 ).grid(row=0, column=0, padx=20, pady=20)
 tk.Label(
-    master=exportActivityLogFrame,
+    master=EXPORT_ACTIVITY_LOG_FRAME,
     text="Search Management Console Activity log and export results.",
-    font=frame_subtitle_font,
+    font=FRAME_SUBTITLE_FONT,
 ).grid(row=1, column=0, padx=20, pady=10)
-tk.Label(master=exportActivityLogFrame, text="1. Input FROM date (yyyy-mm-dd)").grid(
+tk.Label(master=EXPORT_ACTIVITY_LOG_FRAME, text="1. Input FROM date (yyyy-mm-dd)").grid(
     row=2, column=0, pady=2
 )
-dateFrom = fromDateEntry = ttk.Entry(master=exportActivityLogFrame, width=40)
-fromDateEntry.grid(row=3, column=0, pady=10)
-tk.Label(master=exportActivityLogFrame, text="2. Input TO date (yyyy-mm-dd)").grid(
+date_from = from_date_entry = ttk.Entry(master=EXPORT_ACTIVITY_LOG_FRAME, width=40)
+from_date_entry.grid(row=3, column=0, pady=10)
+tk.Label(master=EXPORT_ACTIVITY_LOG_FRAME, text="2. Input TO date (yyyy-mm-dd)").grid(
     row=4, column=0, pady=2
 )
-dateTo = toDateEntry = ttk.Entry(master=exportActivityLogFrame, width=40)
-toDateEntry.grid(row=5, column=0, pady=10)
-tk.Label(master=exportActivityLogFrame, text="3. Input search string").grid(
+date_to = to_date_entry = ttk.Entry(master=EXPORT_ACTIVITY_LOG_FRAME, width=40)
+to_date_entry.grid(row=5, column=0, pady=10)
+tk.Label(master=EXPORT_ACTIVITY_LOG_FRAME, text="3. Input search string").grid(
     row=6, column=0, pady=2
 )
-stringSearchEntry = ttk.Entry(master=exportActivityLogFrame, width=80)
-stringSearchEntry.grid(row=7, column=0, pady=2)
+string_search_entry = ttk.Entry(master=EXPORT_ACTIVITY_LOG_FRAME, width=80)
+string_search_entry.grid(row=7, column=0, pady=2)
 ttk.Button(
-    master=exportActivityLogFrame,
+    master=EXPORT_ACTIVITY_LOG_FRAME,
     text="Search",
-    command=partial(exportActivityLog, True),
+    command=partial(export_activity_log, True),
 ).grid(row=8, column=0, pady=10)
 ttk.Button(
-    master=exportActivityLogFrame,
+    master=EXPORT_ACTIVITY_LOG_FRAME,
     text="Export",
-    command=partial(exportActivityLog, False),
+    command=partial(export_activity_log, False),
 ).grid(row=9, column=0, pady=10)
 ttk.Button(
-    master=exportActivityLogFrame,
+    master=EXPORT_ACTIVITY_LOG_FRAME,
     text="Back to Main Menu",
-    command=goBacktoMainPage,
+    command=go_back_to_mainpage,
 ).grid(row=10, column=0, ipadx=10, pady=10)
 
 
 # Upgrade Agents Frame #############################
 tk.Label(
-    master=upgradeFromCSVFrame,
+    master=UPGRADE_FROM_CSV_FRAME,
     text="Upgrade Agents",
-    font=frame_title_font,
+    font=FRAME_TITLE_FONT,
 ).grid(row=0, column=0, padx=20, pady=20)
 tk.Label(
-    master=upgradeFromCSVFrame,
+    master=UPGRADE_FROM_CSV_FRAME,
     text="Upgrade Agents to a specific package version by ID.",
-    font=frame_subtitle_font,
+    font=FRAME_SUBTITLE_FONT,
 ).grid(row=1, column=0, padx=20, pady=2)
 tk.Label(
-    master=upgradeFromCSVFrame, text="1. Export Packages List to source Package ID"
+    master=UPGRADE_FROM_CSV_FRAME, text="1. Export Packages List to source Package ID"
 ).grid(row=2, column=0, padx=20, pady=2)
 ttk.Button(
-    master=upgradeFromCSVFrame,
+    master=UPGRADE_FROM_CSV_FRAME,
     text="Export Packages List",
-    command=partial(upgradeFromCSV, True),
+    command=partial(upgrade_from_csv, True),
 ).grid(row=3, column=0, pady=10)
-tk.Label(master=upgradeFromCSVFrame, text="2. Insert the Package ID").grid(
+tk.Label(master=UPGRADE_FROM_CSV_FRAME, text="2. Insert the Package ID").grid(
     row=4, column=0, pady=2
 )
-packageIDEntry = ttk.Entry(master=upgradeFromCSVFrame, width=80)
-packageIDEntry.grid(row=5, column=0, pady=2)
+package_id_entry = ttk.Entry(master=UPGRADE_FROM_CSV_FRAME, width=80)
+package_id_entry.grid(row=5, column=0, pady=2)
 tk.Label(
-    master=upgradeFromCSVFrame,
+    master=UPGRADE_FROM_CSV_FRAME,
     text="3. Select a CSV file containing a single column of endpoint names to upgrade",
 ).grid(row=6, column=0, padx=20, pady=2)
 ttk.Button(
-    master=upgradeFromCSVFrame,
+    master=UPGRADE_FROM_CSV_FRAME,
     text="Browse",
-    command=selectCSVFile,
+    command=select_csv_file,
 ).grid(row=7, column=0, pady=2)
-tk.Label(master=upgradeFromCSVFrame, textvariable=inputcsv).grid(
+tk.Label(master=UPGRADE_FROM_CSV_FRAME, textvariable=INPUT_CSV).grid(
     row=8, column=0, pady=2
 )
-useScheduleSwitch = ttk.Checkbutton(
-    master=upgradeFromCSVFrame,
+use_schedule_switch = ttk.Checkbutton(
+    master=UPGRADE_FROM_CSV_FRAME,
     text="Use Schedule",
     style="Switch",
-    variable=useSchedule,
+    variable=USE_SCHEDULE,
     onvalue=True,
     offvalue=False,
 )
-useScheduleSwitch.grid(row=9, column=0, pady=10)
+use_schedule_switch.grid(row=9, column=0, pady=10)
 tk.Label(
-    master=upgradeFromCSVFrame,
+    master=UPGRADE_FROM_CSV_FRAME,
     text="Note: Will request upgrade immediately, unless 'Use Schedule' is toggled on.",
-    font=frame_subnote_font,
+    font=FRAME_SUBNOTE_FONT,
 ).grid(row=10, column=0, pady=2)
 ttk.Button(
-    master=upgradeFromCSVFrame,
+    master=UPGRADE_FROM_CSV_FRAME,
     text="Submit",
-    command=partial(upgradeFromCSV, False),
+    command=partial(upgrade_from_csv, False),
 ).grid(row=11, column=0, pady=10)
 ttk.Button(
-    master=upgradeFromCSVFrame,
+    master=UPGRADE_FROM_CSV_FRAME,
     text="Back to Main Menu",
-    command=goBacktoMainPage,
+    command=go_back_to_mainpage,
 ).grid(row=12, column=0, ipadx=10, pady=10)
 
 
 # Move Agents Frame #############################
 tk.Label(
-    master=moveAgentsFrame,
+    master=MOVE_AGENTS_FRAME,
     text="Move Agents",
-    font=frame_title_font,
+    font=FRAME_TITLE_FONT,
 ).grid(row=0, column=0, padx=20, pady=20)
 tk.Label(
-    master=moveAgentsFrame,
+    master=MOVE_AGENTS_FRAME,
     text="Move Agents to specified Site ID and Group ID.",
-    font=frame_subtitle_font,
+    font=FRAME_SUBTITLE_FONT,
 ).grid(row=1, column=0, padx=20, pady=2)
 tk.Label(
-    master=moveAgentsFrame,
+    master=MOVE_AGENTS_FRAME,
     text="If the target group is dynamic, the agent will be moved to the site only.",
 ).grid(row=2, column=0, pady=2)
-tk.Label(master=moveAgentsFrame, text="1. Export Groups List to get group IDs").grid(
+tk.Label(master=MOVE_AGENTS_FRAME, text="1. Export Groups List to get group IDs").grid(
     row=3, column=0, pady=2
 )
 ttk.Button(
-    master=moveAgentsFrame,
+    master=MOVE_AGENTS_FRAME,
     text="Export Groups List",
-    command=partial(moveAgents, True),
+    command=partial(move_agents, True),
 ).grid(row=4, column=0, pady=10)
 tk.Label(
-    master=moveAgentsFrame,
+    master=MOVE_AGENTS_FRAME,
     text="2. Select a CSV file constructed of three columns:\nendpoints names, target group IDs, target site IDs",
 ).grid(row=5, column=0, padx=20, pady=10)
-ttk.Button(master=moveAgentsFrame, text="Browse", command=selectCSVFile).grid(
+ttk.Button(master=MOVE_AGENTS_FRAME, text="Browse", command=select_csv_file).grid(
     row=6, column=0, pady=10
 )
-tk.Label(master=moveAgentsFrame, textvariable=inputcsv).grid(row=7, column=0, pady=10)
+tk.Label(master=MOVE_AGENTS_FRAME, textvariable=INPUT_CSV).grid(
+    row=7, column=0, pady=10
+)
 ttk.Button(
-    master=moveAgentsFrame,
+    master=MOVE_AGENTS_FRAME,
     text="Submit",
-    command=partial(moveAgents, False),
+    command=partial(move_agents, False),
 ).grid(row=8, column=0, pady=10)
 ttk.Button(
-    master=moveAgentsFrame,
+    master=MOVE_AGENTS_FRAME,
     text="Back to Main Menu",
-    command=goBacktoMainPage,
+    command=go_back_to_mainpage,
 ).grid(row=9, column=0, ipadx=10, pady=10)
 
 
 # Assign Customer Identifier Frame #############################
 tk.Label(
-    master=assignCustomerIdentifierFrame,
+    master=ASSIGN_CUSTOMER_ID_FRAME,
     text="Assign Customer Identifier",
-    font=frame_title_font,
+    font=FRAME_TITLE_FONT,
 ).grid(row=0, column=0, padx=20, pady=20)
 tk.Label(
-    master=assignCustomerIdentifierFrame,
+    master=ASSIGN_CUSTOMER_ID_FRAME,
     text="Assign a Customer Identifier to one or more Agents.",
-    font=frame_subtitle_font,
+    font=FRAME_SUBTITLE_FONT,
 ).grid(row=1, column=0, pady=2)
 tk.Label(
-    master=assignCustomerIdentifierFrame,
+    master=ASSIGN_CUSTOMER_ID_FRAME,
     text="1. Input the Customer Identifier to assign",
 ).grid(row=2, column=0, padx=20, pady=2)
-customerIdentifierEntry = ttk.Entry(master=assignCustomerIdentifierFrame, width=80)
-customerIdentifierEntry.grid(row=3, column=0, pady=(2, 10))
+customer_id_entry = ttk.Entry(master=ASSIGN_CUSTOMER_ID_FRAME, width=80)
+customer_id_entry.grid(row=3, column=0, pady=(2, 10))
 tk.Label(
-    master=assignCustomerIdentifierFrame,
+    master=ASSIGN_CUSTOMER_ID_FRAME,
     text="2. Select a CSV file containing a single column with endpoint names",
 ).grid(row=4, column=0, padx=20, pady=2)
 ttk.Button(
-    master=assignCustomerIdentifierFrame,
+    master=ASSIGN_CUSTOMER_ID_FRAME,
     text="Browse",
-    command=selectCSVFile,
+    command=select_csv_file,
 ).grid(row=5, column=0, pady=10)
-tk.Label(master=assignCustomerIdentifierFrame, textvariable=inputcsv).grid(
+tk.Label(master=ASSIGN_CUSTOMER_ID_FRAME, textvariable=INPUT_CSV).grid(
     row=6, column=0, pady=10
 )
 ttk.Button(
-    master=assignCustomerIdentifierFrame,
+    master=ASSIGN_CUSTOMER_ID_FRAME,
     text="Submit",
-    command=assignCustomerIdentifier,
+    command=assign_customer_id,
 ).grid(row=7, column=0, pady=10)
 ttk.Button(
-    master=assignCustomerIdentifierFrame,
+    master=ASSIGN_CUSTOMER_ID_FRAME,
     text="Back to Main Menu",
-    command=goBacktoMainPage,
+    command=go_back_to_mainpage,
 ).grid(row=8, column=0, ipadx=10, pady=10)
 
 
 # Decommission Agents from CSV Frame #############################
 tk.Label(
-    master=decommissionAgentsFrame,
+    master=DECOMMISSION_AGENTS_FRAME,
     text="Decommission Agents",
-    font=frame_title_font,
+    font=FRAME_TITLE_FONT,
 ).grid(row=0, column=0, padx=20, pady=20)
 tk.Label(
-    master=decommissionAgentsFrame,
+    master=DECOMMISSION_AGENTS_FRAME,
     text="1. Select a CSV file containing a single column of endpoint names to be decommissioned",
 ).grid(row=1, column=0, padx=20, pady=2)
 ttk.Button(
-    master=decommissionAgentsFrame,
+    master=DECOMMISSION_AGENTS_FRAME,
     text="Browse",
-    command=selectCSVFile,
+    command=select_csv_file,
 ).grid(row=2, column=0, pady=10)
-tk.Label(master=decommissionAgentsFrame, textvariable=inputcsv).grid(
+tk.Label(master=DECOMMISSION_AGENTS_FRAME, textvariable=INPUT_CSV).grid(
     row=3, column=0, pady=10
 )
 ttk.Button(
-    master=decommissionAgentsFrame,
+    master=DECOMMISSION_AGENTS_FRAME,
     text="Submit",
-    command=decommissionAgents,
+    command=decommission_agents,
 ).grid(row=4, column=0, pady=10)
 ttk.Button(
-    master=decommissionAgentsFrame,
+    master=DECOMMISSION_AGENTS_FRAME,
     text="Back to Main Menu",
-    command=goBacktoMainPage,
+    command=go_back_to_mainpage,
 ).grid(row=5, column=0, ipadx=10, pady=10)
 
 
 # Export all agents Frame #############################
 tk.Label(
-    master=exportEndpointsFrame,
+    master=EXPORT_ENDPOINTS_FRAME,
     text="Export All Endpoints",
-    font=frame_title_font,
+    font=FRAME_TITLE_FONT,
 ).grid(row=0, column=0, columnspan=2, padx=20, pady=20)
 tk.Label(
-    master=exportEndpointsFrame,
+    master=EXPORT_ENDPOINTS_FRAME,
     text="Exports all Agent details to a CSV or XLSX",
-    font=frame_subtitle_font,
+    font=FRAME_SUBTITLE_FONT,
 ).grid(row=1, column=0, columnspan=2, padx=20, pady=2)
-endpointOutputType = tk.StringVar()
-endpointOutputType.set("csv")
+endpoint_output_type = tk.StringVar()
+endpoint_output_type.set("csv")
 ttk.Radiobutton(
-    exportEndpointsFrame, text="CSV", variable=endpointOutputType, value="csv"
+    EXPORT_ENDPOINTS_FRAME, text="CSV", variable=endpoint_output_type, value="csv"
 ).grid(row=2, column=0, padx=10, pady=2, sticky="e")
 ttk.Radiobutton(
-    exportEndpointsFrame, text="XLSX", variable=endpointOutputType, value="xlsx"
+    EXPORT_ENDPOINTS_FRAME, text="XLSX", variable=endpoint_output_type, value="xlsx"
 ).grid(row=2, column=1, padx=10, pady=2, sticky="w")
 ttk.Button(
-    master=exportEndpointsFrame,
+    master=EXPORT_ENDPOINTS_FRAME,
     text="Export",
-    command=exportAllAgents,
+    command=export_all_agents,
 ).grid(row=3, column=0, columnspan=2, pady=10)
 ttk.Button(
-    master=exportEndpointsFrame,
+    master=EXPORT_ENDPOINTS_FRAME,
     text="Back to Main Menu",
-    command=goBacktoMainPage,
+    command=go_back_to_mainpage,
 ).grid(row=4, column=0, columnspan=2, ipadx=10, pady=10)
 
 
 # Export Exclusions #############################
 tk.Label(
-    master=exportExclusionsFrame, text="Export Exclusions", font=frame_title_font
+    master=EXPORT_EXCLUSIONS_FRAME, text="Export Exclusions", font=FRAME_TITLE_FONT
 ).grid(row=0, column=0, padx=20, pady=20)
 tk.Label(
-    master=exportExclusionsFrame,
+    master=EXPORT_EXCLUSIONS_FRAME,
     text="Exports all Exclusions to an XLSX",
-    font=frame_subtitle_font,
+    font=FRAME_SUBTITLE_FONT,
 ).grid(row=1, column=0, padx=20, pady=2)
 ttk.Button(
-    master=exportExclusionsFrame,
+    master=EXPORT_EXCLUSIONS_FRAME,
     text="Export",
-    command=exportExclusions,
+    command=export_exclusions,
 ).grid(row=2, column=0, pady=10)
 ttk.Button(
-    master=exportExclusionsFrame,
+    master=EXPORT_EXCLUSIONS_FRAME,
     text="Back to Main Menu",
-    command=goBacktoMainPage,
+    command=go_back_to_mainpage,
 ).grid(row=3, column=0, ipadx=10, pady=10)
 
 
 # Export Endpoint Tag IDs Frame #############################
 tk.Label(
-    master=exportEndpointTagsFrame, text="Export Endpoint Tags", font=frame_title_font
+    master=EXPORT_ENDPOINT_TAGS_FRAME,
+    text="Export Endpoint Tags",
+    font=FRAME_TITLE_FONT,
 ).grid(row=0, column=0, padx=20, pady=20)
 tk.Label(
-    master=exportEndpointTagsFrame,
+    master=EXPORT_ENDPOINT_TAGS_FRAME,
     text="Exports Endpoint Tag details to CSV for all scopes.",
-    font=frame_subtitle_font,
+    font=FRAME_SUBTITLE_FONT,
 ).grid(row=1, column=0, padx=20, pady=2)
 ttk.Button(
-    master=exportEndpointTagsFrame,
+    master=EXPORT_ENDPOINT_TAGS_FRAME,
     text="Export",
-    command=exportEndpointTags,
+    command=export_endpoint_tags,
 ).grid(row=2, column=0, pady=10)
 ttk.Button(
-    master=exportEndpointTagsFrame,
+    master=EXPORT_ENDPOINT_TAGS_FRAME,
     text="Back to Main Menu",
-    command=goBacktoMainPage,
+    command=go_back_to_mainpage,
 ).grid(row=3, column=0, ipadx=10, pady=10)
 
 
 # Manage Endpoint Tags Frame #############################
 tk.Label(
-    master=manageEndpointTagsFrame, text="Manage Endpoint Tags", font=frame_title_font
+    master=MANAGE_ENDPOINT_TAGS_FRAME,
+    text="Manage Endpoint Tags",
+    font=FRAME_TITLE_FONT,
 ).grid(row=0, column=0, columnspan=2, padx=20, pady=20)
 tk.Label(
-    master=manageEndpointTagsFrame,
+    master=MANAGE_ENDPOINT_TAGS_FRAME,
     text="Add or Remove Endpoint Tags from Agents.",
-    font=frame_subtitle_font,
+    font=FRAME_SUBTITLE_FONT,
 ).grid(row=1, column=0, columnspan=2, pady=2)
-tk.Label(master=manageEndpointTagsFrame, text="1. Select Action").grid(
+tk.Label(master=MANAGE_ENDPOINT_TAGS_FRAME, text="1. Select Action").grid(
     row=2, column=0, columnspan=2, padx=20, pady=2
 )
-endpointTagsAction = tk.StringVar()
-endpointTagsAction.set("add")
+endpoint_tags_action = tk.StringVar()
+endpoint_tags_action.set("add")
 ttk.Radiobutton(
-    manageEndpointTagsFrame,
+    MANAGE_ENDPOINT_TAGS_FRAME,
     text="Add Endpoint Tag",
-    variable=endpointTagsAction,
+    variable=endpoint_tags_action,
     value="add",
 ).grid(row=3, column=0, padx=10, pady=2, sticky="e")
 ttk.Radiobutton(
-    manageEndpointTagsFrame,
+    MANAGE_ENDPOINT_TAGS_FRAME,
     text="Remove Endpoint Tag",
-    variable=endpointTagsAction,
+    variable=endpoint_tags_action,
     value="remove",
 ).grid(row=3, column=1, padx=10, pady=2, sticky="w")
-tk.Label(master=manageEndpointTagsFrame, text="2. Input Endpoint Tag ID").grid(
+tk.Label(master=MANAGE_ENDPOINT_TAGS_FRAME, text="2. Input Endpoint Tag ID").grid(
     row=4, column=0, columnspan=2, padx=20, pady=2
 )
-tagIDEntry = ttk.Entry(master=manageEndpointTagsFrame, width=80)
-tagIDEntry.grid(row=5, column=0, columnspan=2, pady=(2, 10))
+tag_id_entry = ttk.Entry(master=MANAGE_ENDPOINT_TAGS_FRAME, width=80)
+tag_id_entry.grid(row=5, column=0, columnspan=2, pady=(2, 10))
 tk.Label(
-    master=manageEndpointTagsFrame,
+    master=MANAGE_ENDPOINT_TAGS_FRAME,
     text="3. Select Agent Identifier type. This should align with your source CSV.",
 ).grid(row=6, column=0, columnspan=2, padx=20, pady=2)
-agentIDType = tk.StringVar()
-agentIDType.set("uuid")
+agent_id_type = tk.StringVar()
+agent_id_type.set("uuid")
 ttk.Radiobutton(
-    manageEndpointTagsFrame, text="Agent UUID", variable=agentIDType, value="uuid"
+    MANAGE_ENDPOINT_TAGS_FRAME, text="Agent UUID", variable=agent_id_type, value="uuid"
 ).grid(row=7, column=0, padx=10, pady=2, sticky="e")
 ttk.Radiobutton(
-    manageEndpointTagsFrame, text="Endpoint Name", variable=agentIDType, value="name"
+    MANAGE_ENDPOINT_TAGS_FRAME,
+    text="Endpoint Name",
+    variable=agent_id_type,
+    value="name",
 ).grid(row=7, column=1, padx=10, pady=2, sticky="w")
 tk.Label(
-    master=manageEndpointTagsFrame,
+    master=MANAGE_ENDPOINT_TAGS_FRAME,
     text="4. Select a CSV file containing a single column of values (uuids or endpoint names)",
 ).grid(row=8, column=0, columnspan=2, padx=20, pady=2)
 ttk.Button(
-    master=manageEndpointTagsFrame,
+    master=MANAGE_ENDPOINT_TAGS_FRAME,
     text="Browse",
-    command=selectCSVFile,
+    command=select_csv_file,
 ).grid(row=9, column=0, columnspan=2, pady=10)
-tk.Label(master=manageEndpointTagsFrame, textvariable=inputcsv).grid(
+tk.Label(master=MANAGE_ENDPOINT_TAGS_FRAME, textvariable=INPUT_CSV).grid(
     row=10, column=0, columnspan=2, pady=10
 )
 ttk.Button(
-    master=manageEndpointTagsFrame, text="Submit", command=manageEndpointTags
+    master=MANAGE_ENDPOINT_TAGS_FRAME, text="Submit", command=manage_endpoint_tags
 ).grid(row=11, column=0, columnspan=2, pady=10)
 ttk.Button(
-    master=manageEndpointTagsFrame,
+    master=MANAGE_ENDPOINT_TAGS_FRAME,
     text="Back to Main Menu",
-    command=goBacktoMainPage,
+    command=go_back_to_mainpage,
 ).grid(row=12, column=0, columnspan=2, ipadx=10, pady=10)
 
 
 # Export Agent Local Config Frame #############################
 tk.Label(
-    master=exportLocalConfigFrame, text="Export Local Config", font=frame_title_font
+    master=EXPORT_LOCAL_CONFIG_FRAME, text="Export Local Config", font=FRAME_TITLE_FONT
 ).grid(row=0, column=0, padx=20, pady=20)
 tk.Label(
-    master=exportLocalConfigFrame,
+    master=EXPORT_LOCAL_CONFIG_FRAME,
     text="Exports the local agent configuration to a single JSON file.",
-    font=frame_subtitle_font,
+    font=FRAME_SUBTITLE_FONT,
 ).grid(row=1, column=0, padx=20, pady=2)
 tk.Label(
-    master=exportLocalConfigFrame,
+    master=EXPORT_LOCAL_CONFIG_FRAME,
     text="1. Select a CSV file containing a single column of agent UUIDs",
 ).grid(row=2, column=0, padx=20, pady=2)
 ttk.Button(
-    master=exportLocalConfigFrame,
+    master=EXPORT_LOCAL_CONFIG_FRAME,
     text="Browse",
-    command=selectCSVFile,
+    command=select_csv_file,
 ).grid(row=3, column=0, pady=10)
-tk.Label(master=exportLocalConfigFrame, textvariable=inputcsv).grid(
+tk.Label(master=EXPORT_LOCAL_CONFIG_FRAME, textvariable=INPUT_CSV).grid(
     row=4, column=0, pady=10
 )
 ttk.Button(
-    master=exportLocalConfigFrame,
+    master=EXPORT_LOCAL_CONFIG_FRAME,
     text="Export",
-    command=exportLocalConfig,
+    command=export_local_config,
 ).grid(row=5, column=0, pady=10)
 ttk.Button(
-    master=exportLocalConfigFrame,
+    master=EXPORT_LOCAL_CONFIG_FRAME,
     text="Back to Main Menu",
-    command=goBacktoMainPage,
+    command=go_back_to_mainpage,
 ).grid(row=6, column=0, ipadx=10, pady=10)
 
 
 # Export Users Frame #############################
-tk.Label(master=exportUsersFrame, text="Export Users", font=frame_title_font).grid(
+tk.Label(master=EXPORT_USERS_FRAME, text="Export Users", font=FRAME_TITLE_FONT).grid(
     row=0, column=0, columnspan=2, padx=20, pady=20
 )
 tk.Label(
-    master=exportUsersFrame,
+    master=EXPORT_USERS_FRAME,
     text="Exports User details to CSV.",
-    font=frame_subtitle_font,
+    font=FRAME_SUBTITLE_FONT,
 ).grid(row=1, column=0, columnspan=2, padx=20, pady=2)
-userOutputType = tk.StringVar()
-userOutputType.set("csv")
+user_output_type = tk.StringVar()
+user_output_type.set("csv")
 ttk.Radiobutton(
-    exportUsersFrame, text="CSV", variable=userOutputType, value="csv"
+    EXPORT_USERS_FRAME, text="CSV", variable=user_output_type, value="csv"
 ).grid(row=2, column=0, padx=10, pady=2, sticky="e")
 ttk.Radiobutton(
-    exportUsersFrame, text="XLSX", variable=userOutputType, value="xlsx"
+    EXPORT_USERS_FRAME, text="XLSX", variable=user_output_type, value="xlsx"
 ).grid(row=2, column=1, padx=10, pady=2, sticky="w")
 ttk.Button(
-    master=exportUsersFrame,
+    master=EXPORT_USERS_FRAME,
     text="Export",
-    command=exportUsers,
+    command=export_users,
 ).grid(row=3, column=0, columnspan=2, pady=10)
 ttk.Button(
-    master=exportUsersFrame,
+    master=EXPORT_USERS_FRAME,
     text="Back to Main Menu",
-    command=goBacktoMainPage,
+    command=go_back_to_mainpage,
 ).grid(row=4, column=0, columnspan=2, ipadx=10, pady=10)
 
 
 # Export Ranger Inventory Frame #############################
 tk.Label(
-    master=exportRangerInvFrame, text="Export Ranger Inventory", font=frame_title_font
+    master=EXPORT_RANGER_INV_FRAME,
+    text="Export Ranger Inventory",
+    font=FRAME_TITLE_FONT,
 ).grid(row=0, column=0, columnspan=2, padx=20, pady=20)
 tk.Label(
-    master=exportRangerInvFrame,
+    master=EXPORT_RANGER_INV_FRAME,
     text="Exports Ranger Inventory details to CSV",
-    font=frame_subtitle_font,
+    font=FRAME_SUBTITLE_FONT,
 ).grid(row=1, column=0, columnspan=2, padx=20, pady=2)
 tk.Label(
-    master=exportRangerInvFrame,
+    master=EXPORT_RANGER_INV_FRAME,
     text="1. Select which scope type to export Ranger Inventory from.",
 ).grid(row=2, column=0, columnspan=2, padx=20, pady=2)
-exportRangerScope = tk.StringVar()
-exportRangerScope.set("accounts")
+export_ranger_scope = tk.StringVar()
+export_ranger_scope.set("accounts")
 ttk.Radiobutton(
-    exportRangerInvFrame,
+    EXPORT_RANGER_INV_FRAME,
     text="Account",
-    variable=exportRangerScope,
+    variable=export_ranger_scope,
     value="accounts",
 ).grid(row=3, column=0, padx=10, pady=2, sticky="e")
 ttk.Radiobutton(
-    exportRangerInvFrame, text="Site", variable=exportRangerScope, value="sites"
+    EXPORT_RANGER_INV_FRAME, text="Site", variable=export_ranger_scope, value="sites"
 ).grid(row=3, column=1, padx=10, pady=2, sticky="w")
 tk.Label(
-    master=exportRangerInvFrame,
+    master=EXPORT_RANGER_INV_FRAME,
     text="2. Select a CSV containing a single column of Account or Site IDs.",
 ).grid(row=4, column=0, columnspan=2, padx=20, pady=2)
 ttk.Button(
-    master=exportRangerInvFrame,
+    master=EXPORT_RANGER_INV_FRAME,
     text="Browse",
-    command=selectCSVFile,
+    command=select_csv_file,
 ).grid(row=5, column=0, columnspan=2, pady=2)
-tk.Label(master=exportRangerInvFrame, textvariable=inputcsv).grid(
+tk.Label(master=EXPORT_RANGER_INV_FRAME, textvariable=INPUT_CSV).grid(
     row=6, column=0, columnspan=2, pady=2
 )
 tk.Label(
-    master=exportRangerInvFrame,
+    master=EXPORT_RANGER_INV_FRAME,
     text="3. Specify time period for data export",
 ).grid(row=7, column=0, columnspan=2, padx=20, pady=2)
 available_timeperiods = ("", "latest", "last12h", "last24h", "last3d", "last7d")
-exportRangerTimePeriod = tk.StringVar()
-exportRangerTimePeriod.set(available_timeperiods[1])
+export_ranger_timeperiod = tk.StringVar()
+export_ranger_timeperiod.set(available_timeperiods[1])
 ttk.OptionMenu(
-    exportRangerInvFrame, exportRangerTimePeriod, *available_timeperiods
+    EXPORT_RANGER_INV_FRAME, export_ranger_timeperiod, *available_timeperiods
 ).grid(row=8, column=0, columnspan=2, pady=10)
 ttk.Button(
-    master=exportRangerInvFrame,
+    master=EXPORT_RANGER_INV_FRAME,
     text="Export",
     command=export_ranger,
 ).grid(row=9, column=0, columnspan=2, pady=10)
 ttk.Button(
-    master=exportRangerInvFrame,
+    master=EXPORT_RANGER_INV_FRAME,
     text="Back to Main Menu",
-    command=goBacktoMainPage,
+    command=go_back_to_mainpage,
 ).grid(row=10, column=0, columnspan=2, ipadx=10, pady=10)
 
 
