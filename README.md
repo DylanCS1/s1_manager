@@ -308,35 +308,6 @@ Process:
 <p align="right">(<a href="#top">back to top</a>)</p>
 
 
-<!-- ROADMAP -->
-## Roadmap
-
-Proposed (hopeful) changes to implement in the near future.
-
-- [ ] Add additional features around newer API offerings
-  - [x] Endpoint Tag management
-  - [x] Export Ranger Inventory for Account or Site scope
-  - [x] Export Agent Local Config
-  - [x] Export Users
-  - [ ] Reset, or Update Agent Local Config
-  - [ ] Policy updates to specified scope(s)
-  - [ ] Fetch agent logs
-  - [ ] Export Tasks events
-- [x] Update dependencies
-- [ ] Functional improvements
-   - [ ] Implement asyncio on more functions
-   - [x] Consistent logging across all features of tool
-   - [x] Implement code styling restraints (black code formatter applied)
-   - [ ] Refactor/cleanup code
-- [x] UI Enhancements
-    - [x] Uniformity between panes, buttons, font, etc.
-    - [x] Improve color theme
-    - [x] New logo
-    - [x] New executable icon
-
-<p align="right">(<a href="#top">back to top</a>)</p>
-
-
 <!-- CONTRIBUTING -->
 ## Contributing
 
