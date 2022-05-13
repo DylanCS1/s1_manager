@@ -8,7 +8,7 @@
 
 </div>
 
-The S1 Manager tool is a GUI-based application to assist SentinelOne administrators in performing specific tasks via the v2.1 API. The tool was developed in Python 3.6+ with TKinter.
+The S1 Manager tool is a GUI-based application to assist SentinelOne administrators in performing specific tasks via the v2.1 API. 
 
 > This tool requires a SentinelOne Management Console and an API Token for a user with appropriate permissions to run the various API calls. Use of this tool assumes the user has an active license to use the SentinelOne product.
 
@@ -32,14 +32,16 @@ To download the pre-2022 release:
 - [https://github.com/DylanCS1/s1_manager/raw/main/.COMPILED/s1_manager-1.0.exe](https://github.com/DylanCS1/s1_manager/raw/main/.COMPILED/s1_manager-1.0.exe)
 - SHA1: 1E03D09572BFAA5823295606DDE1D39A94EB6939
 
+> Note: The tool is currently developed in Python 3.10, and tested on Windows 10 x64. Although it can feasibly work on Linux/macOS it is not fully tested on those operating systems at this time.
 
+## Windows
 ### Run from source
 To get a local copy up and running follow these simple steps:
 1. Clone the repo
    ```sh
    git clone https://github.com/DylanCS1/s1_manager.git
    ```
-2. Install Python package dependencies
+2. Install Python package dependencies*
    ```sh
    pip install install -r requirements.txt
    ```
@@ -48,17 +50,12 @@ To get a local copy up and running follow these simple steps:
    python3 s1_manager.py
    ```
 
-For use on Linux:
-> This script relies on files within the /theme and /ico folders which are hard coded. If you opt to move them make sure to update the logo and windows.tk.call variables in s1_manager.py  
-> On Ubuntu (and presumably other Linux distros) you may need to install Tkinter. Refer to the tkdocs for details: https://tkdocs.com/tutorial/install.html#install-x11-python
-
-
 ### Build EXE for Windows
 1. Clone the repo
    ```sh
    git clone https://github.com/DylanCS1/s1_manager.git
    ```
-2. Install Python package dependencies
+2. Install Python package dependencies*
    ```sh
    pip install install -r requirements.txt
    ```
@@ -66,6 +63,50 @@ For use on Linux:
    ```sh
    pyinstaller s1_manager.spec
    ```
+
+
+## Linux
+This script relies on files within the /theme and /ico folders, which are hard coded. If you opt to move them make sure to update the logo and windows.tk.call variables in s1_manager.py.
+
+1. Clone the repo
+   ```sh
+   git clone https://github.com/DylanCS1/s1_manager.git
+   ```
+2. Install Python package dependencies*
+   ```sh
+   sudo pip3 install -r requirements.txt
+   ```
+3. You may need to install Tkinter separately. Refer to the tkdocs for details: https://tkdocs.com/tutorial/install.html#install-x11-python & https://stackoverflow.com/questions/40588444/how-to-install-python3-tk-in-centos  
+   Ubuntu:
+   ```sh
+   sudo apt install python3-tk
+   ```
+   CentOS:
+   ```sh
+   sudo yum install python3-tkinter
+   ```
+4. Run the s1_manager.py
+   ```sh
+   python3 s1_manager.py
+   ```
+
+## macOS
+This script relies on files within the /theme and /ico folders, which are hard coded. If you opt to move them make sure to update the logo and windows.tk.call variables in s1_manager.py.
+> Requires Python 3.10+
+
+1. Clone the repo
+   ```sh
+   git clone https://github.com/DylanCS1/s1_manager.git
+   ```
+2. Install Python package dependencies*
+   ```sh
+   sudo pip3 install -r requirements.txt
+   ```
+4. Run the s1_manager.py
+   ```sh
+   python3 s1_manager.py
+   ```
+
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
