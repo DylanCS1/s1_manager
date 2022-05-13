@@ -8,7 +8,7 @@
 
 </div>
 
-The S1 Manager tool is a GUI-based application to assist SentinelOne administrators in performing specific tasks via the v2.1 API. The tool was developed in Python 3.6+ with TKinter.
+The S1 Manager tool is a GUI-based application to assist SentinelOne administrators in performing specific tasks via the v2.1 API. 
 
 > This tool requires a SentinelOne Management Console and an API Token for a user with appropriate permissions to run the various API calls. Use of this tool assumes the user has an active license to use the SentinelOne product.
 
@@ -32,7 +32,9 @@ To download the pre-2022 release:
 - [https://github.com/DylanCS1/s1_manager/raw/main/.COMPILED/s1_manager-1.0.exe](https://github.com/DylanCS1/s1_manager/raw/main/.COMPILED/s1_manager-1.0.exe)
 - SHA1: 1E03D09572BFAA5823295606DDE1D39A94EB6939
 
+> Note: The tool is currently developed in Python 3.10, and tested on Windows 10 x64. Although it can feasibly work on Linux/macOS it is not fully tested on those operating systems at this time.
 
+## Windows
 ### Run from source
 To get a local copy up and running follow these simple steps:
 1. Clone the repo
@@ -48,8 +50,7 @@ To get a local copy up and running follow these simple steps:
    python3 s1_manager.py
    ```
 
-
-### Build EXE
+### Build EXE for Windows
 1. Clone the repo
    ```sh
    git clone https://github.com/DylanCS1/s1_manager.git
@@ -62,6 +63,50 @@ To get a local copy up and running follow these simple steps:
    ```sh
    pyinstaller s1_manager.spec
    ```
+
+
+## Linux
+This script relies on files within the /theme and /ico folders, which are hard coded. If you opt to move them make sure to update the `logo` and `windows.tk.call` variables in s1_manager.py.
+
+1. Clone the repo
+   ```sh
+   git clone https://github.com/DylanCS1/s1_manager.git
+   ```
+2. Install Python package dependencies
+   ```sh
+   sudo pip3 install -r requirements.txt
+   ```
+3. You may need to install Tkinter separately. Refer to the tkdocs for details: https://tkdocs.com/tutorial/install.html#install-x11-python & https://stackoverflow.com/questions/40588444/how-to-install-python3-tk-in-centos  
+   Ubuntu:
+   ```sh
+   sudo apt install python3-tk
+   ```
+   CentOS:
+   ```sh
+   sudo yum install python3-tkinter
+   ```
+4. Run the s1_manager.py
+   ```sh
+   python3 s1_manager.py
+   ```
+
+## macOS
+This script relies on files within the /theme and /ico folders, which are hard coded. If you opt to move them make sure to update the `logo` and `windows.tk.call` variables in s1_manager.py.
+> Note: Requires Python 3.10+
+
+1. Clone the repo
+   ```sh
+   git clone https://github.com/DylanCS1/s1_manager.git
+   ```
+2. Install Python package dependencies
+   ```sh
+   sudo pip3 install -r requirements.txt
+   ```
+4. Run the s1_manager.py
+   ```sh
+   python3 s1_manager.py
+   ```
+
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
@@ -360,11 +405,11 @@ And to the following resources:
 [license-url]: https://github.com/DylanCS1/s1_manager/blob/main/LICENSE.txt "MIT License"
 
 <!-- Images -->
-[product-screenshot]: .README/product_screenshot.png "S1 Manager Screenshot"
-[login-view]: .README/login_view.png "Login"
-[dv-screenshot]: .README/dv_query.png "Deep Visibility Query"
-[exclusion-screenshot]: .README/exclusion_export.png "Example Exclusion CSV"
-[endpoint-screenshot]: .README/endpoint_names.png "CSV Endpoint Names example"
-[dev-tools-screenshot]: .README/dev_tools.png "Dev Tools example"
-[group-id-screenshot]: .README/group_id.png "Group ID example"
-[csv-example-screenshot]: .README/csv_example.png "CSV example"
+[product-screenshot]: readme/product_screenshot.png "S1 Manager Screenshot"
+[login-view]: readme/login_view.png "Login"
+[dv-screenshot]: readme/dv_query.png "Deep Visibility Query"
+[exclusion-screenshot]: readme/exclusion_export.png "Example Exclusion CSV"
+[endpoint-screenshot]: readme/endpoint_names.png "CSV Endpoint Names example"
+[dev-tools-screenshot]: readme/dev_tools.png "Dev Tools example"
+[group-id-screenshot]: readme/group_id.png "Group ID example"
+[csv-example-screenshot]: readme/csv_example.png "CSV example"
