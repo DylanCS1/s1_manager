@@ -66,13 +66,13 @@ To get a local copy up and running follow these simple steps:
 
 
 ## Linux
-This script relies on files within the /theme and /ico folders, which are hard coded. If you opt to move them make sure to update the logo and windows.tk.call variables in s1_manager.py.
+This script relies on files within the /theme and /ico folders, which are hard coded. If you opt to move them make sure to update the `logo` and `windows.tk.call` variables in s1_manager.py.
 
 1. Clone the repo
    ```sh
    git clone https://github.com/DylanCS1/s1_manager.git
    ```
-2. Install Python package dependencies*
+2. Install Python package dependencies
    ```sh
    sudo pip3 install -r requirements.txt
    ```
@@ -91,14 +91,14 @@ This script relies on files within the /theme and /ico folders, which are hard c
    ```
 
 ## macOS
-This script relies on files within the /theme and /ico folders, which are hard coded. If you opt to move them make sure to update the logo and windows.tk.call variables in s1_manager.py.
-> Requires Python 3.10+
+This script relies on files within the /theme and /ico folders, which are hard coded. If you opt to move them make sure to update the `logo` and `windows.tk.call` variables in s1_manager.py.
+> Note: Requires Python 3.10+
 
 1. Clone the repo
    ```sh
    git clone https://github.com/DylanCS1/s1_manager.git
    ```
-2. Install Python package dependencies*
+2. Install Python package dependencies
    ```sh
    sudo pip3 install -r requirements.txt
    ```
