@@ -55,7 +55,7 @@ To get a local copy up and running follow these simple steps:
    ```sh
    git clone https://github.com/DylanCS1/s1_manager.git
    ```
-2. Install Python package dependencies*
+2. Install Python package dependencies
    ```sh
    pip install install -r requirements.txt
    ```
