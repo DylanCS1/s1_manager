@@ -137,4 +137,5 @@ dmypy.json
 *.zip
 *.bak
 *.json
-/.IGNORE
+/ignore
+/compiled

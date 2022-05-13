@@ -48,8 +48,12 @@ To get a local copy up and running follow these simple steps:
    python3 s1_manager.py
    ```
 
+For use on Linux:
+> This script relies on files within the /theme and /ico folders which are hard coded. If you opt to move them make sure to update the logo and windows.tk.call variables in s1_manager.py  
+> On Ubuntu (and presumably other Linux distros) you may need to install Tkinter. Refer to the tkdocs for details: https://tkdocs.com/tutorial/install.html#install-x11-python
 
-### Build EXE
+
+### Build EXE for Windows
 1. Clone the repo
    ```sh
    git clone https://github.com/DylanCS1/s1_manager.git
@@ -360,11 +364,11 @@ And to the following resources:
 [license-url]: https://github.com/DylanCS1/s1_manager/blob/main/LICENSE.txt "MIT License"
 
 <!-- Images -->
-[product-screenshot]: .README/product_screenshot.png "S1 Manager Screenshot"
-[login-view]: .README/login_view.png "Login"
-[dv-screenshot]: .README/dv_query.png "Deep Visibility Query"
-[exclusion-screenshot]: .README/exclusion_export.png "Example Exclusion CSV"
-[endpoint-screenshot]: .README/endpoint_names.png "CSV Endpoint Names example"
-[dev-tools-screenshot]: .README/dev_tools.png "Dev Tools example"
-[group-id-screenshot]: .README/group_id.png "Group ID example"
-[csv-example-screenshot]: .README/csv_example.png "CSV example"
+[product-screenshot]: readme/product_screenshot.png "S1 Manager Screenshot"
+[login-view]: readme/login_view.png "Login"
+[dv-screenshot]: readme/dv_query.png "Deep Visibility Query"
+[exclusion-screenshot]: readme/exclusion_export.png "Example Exclusion CSV"
+[endpoint-screenshot]: readme/endpoint_names.png "CSV Endpoint Names example"
+[dev-tools-screenshot]: readme/dev_tools.png "Dev Tools example"
+[group-id-screenshot]: readme/group_id.png "Group ID example"
+[csv-example-screenshot]: readme/csv_example.png "CSV example"

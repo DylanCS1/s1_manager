@@ -24,7 +24,7 @@ from PIL import Image, ImageTk
 from xlsxwriter.workbook import Workbook
 
 # CONSTS
-__version__ = "2022.1.1"
+__version__ = "2022.1.2"
 api_version = "v2.1"
 dir_path = os.path.dirname(os.path.realpath(__file__))
 query_limits = "limit=1000"
@@ -44,14 +44,15 @@ else:
 # WINDOW SETTINGS
 window = tk.Tk()
 window.title("S1 Manager")
-window.iconbitmap(os.path.join(dir_path, ".ICO/s1_manager.ico"))
+if platform.system() == "Windows":
+    window.iconbitmap(os.path.join(dir_path, "ico/s1_manager.ico"))
 window.minsize(850, 650)
 
 # THEME
 window.tk.call(
-    "source", os.path.join(dir_path, ".THEME/forest-dark.tcl")
+    "source", os.path.join(dir_path, "theme/forest-dark.tcl")
 )  # https://github.com/rdbende/Forest-ttk-theme
-logo = ImageTk.PhotoImage(Image.open(os.path.join(dir_path, ".ICO/s1_manager.png")))
+logo = ImageTk.PhotoImage(Image.open(os.path.join(dir_path, "ico/s1_manager.png")))
 ttk.Style().theme_use("forest-dark")
 frame_title_font = ("Courier", 24, UNDERLINE)
 frame_subtitle_font_underline = ("Arial", 14, UNDERLINE)
