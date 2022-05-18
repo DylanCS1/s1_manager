@@ -317,7 +317,7 @@ Process:
    - *Threat Name* = A partial or complete search string. Search is not case-sensitive, and multiple words should not be enclosed in quotes.
       > May have unexpected results with special characters.
    - *SHA1* = One or more comma-separated SHA1s (do not include any whitespace)
-3. Select the **Analyst Verdict** from the drop-down: *undefined*, *suspicous*, *false_positive*, or *true_positive*
+3. Select the **Analyst Verdict** from the drop-down: *undefined*, *suspicious*, *false_positive*, or *true_positive*
 4. Input one or more **Site IDs**, separated by a comma (do not include spaces)
 
 
