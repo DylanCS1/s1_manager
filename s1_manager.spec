@@ -4,9 +4,9 @@
 block_cipher = None
 
 added_files = [
-    ( '.THEME\\forest-dark.tcl', '.THEME' ),
-    ('.THEME\\forest-dark\\*.png', '.THEME\\forest-dark' ),
-    ('.ICO\\s1_manager.*', '.ICO')
+    ( 'theme\\forest-dark.tcl', 'theme' ),
+    ('theme\\forest-dark\\*.png', 'theme\\forest-dark' ),
+    ('ico\\s1_manager.*', 'ico')
 ]
 
 a = Analysis(['s1_manager.py'],
@@ -40,7 +40,7 @@ exe = EXE(pyz,
           upx_exclude=[],
           runtime_tmpdir=None,
           console=False,
-          icon='.ICO\\s1_manager.ico',
+          icon='ico\\s1_manager.ico',
           disable_windowed_traceback=False,
           target_arch=None,
           codesign_identity=None,

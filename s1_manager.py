@@ -24,7 +24,7 @@ from PIL import Image, ImageTk
 from xlsxwriter.workbook import Workbook
 
 # CONSTS
-__version__ = "2022.1.3"
+__version__ = "2022.1.4"
 API_VERSION = "v2.1"
 DIR_PATH = os.path.dirname(os.path.realpath(__file__))
 QUERY_LIMITS = "limit=1000"
@@ -48,7 +48,7 @@ window = tk.Tk()
 window.title("S1 Manager")
 if platform.system() == "Windows":
     window.iconbitmap(os.path.join(DIR_PATH, "ico/s1_manager.ico"))
-window.minsize(850, 650)
+window.minsize(900, 700)
 
 # THEME
 window.tk.call("source", os.path.join(DIR_PATH, "theme/forest-dark.tcl"))
@@ -77,6 +77,7 @@ MOVE_AGENTS_FRAME = ttk.Frame()
 ASSIGN_CUSTOMER_ID_FRAME = ttk.Frame()
 DECOMMISSION_AGENTS_FRAME = ttk.Frame()
 MANAGE_ENDPOINT_TAGS_FRAME = ttk.Frame()
+BULK_RESOLVE_THREATS_FRAME = ttk.Frame()
 ERROR = tk.StringVar()
 HOSTNAME = tk.StringVar()
 API_TOKEN = tk.StringVar()
@@ -119,6 +120,7 @@ def test_login(hostname, apitoken, proxy):
     headers = {
         "Content-type": "application/json",
         "Authorization": "ApiToken " + apitoken,
+        "Accept": "application/json",
     }
     r = requests.get(
         hostname + f"/web/api/{API_VERSION}/system/info",
@@ -2325,6 +2327,251 @@ def export_ranger():
         logger.info("Done exporting Ranger Inventory.")
 
 
+def bulk_resolve_threats():
+    """Function to resolve multiple incidents by threat detail string search or SHA1"""
+    # TODO: Test special chars
+    st = ScrolledText.ScrolledText(
+        master=BULK_RESOLVE_THREATS_FRAME, state="disabled", height=10
+    )
+    st.configure(font=ST_FONT)
+    st.grid(row=13, column=0, columnspan=2, pady=10)
+    text_handler = TextHandler(st)
+    logging.basicConfig(
+        filename=LOG_NAME,
+        level=LOG_LEVEL,
+        format=LOG_FORMAT,
+    )
+    logger = logging.getLogger()
+    logger.addHandler(text_handler)
+
+    GET_LIMIT = 1
+    POST_LIMIT = 2500  # Max per API Docs is 5000, in newer consoles
+    RESOLVED_STATUS = "resolved"
+    IS_RESOLVED = False
+    THREAT_ENDPOINT = "/threats"
+    NOTE_ENDPOINT = "/threats/notes"
+    INCIDENT_ENDPOINT = "/threats/incident"
+    PARTIAL_URL = f"{HOSTNAME.get()}/web/api/{API_VERSION}"
+    site_ids = [x for x in site_ids_list.get().split(",")]
+    new_verdict = selected_analyst_verdict.get()
+    new_note = f"Analyst Verdict: '{new_verdict}'\nIncident Status: '{RESOLVED_STATUS}'\n\n- Set via S1 Manager."
+    search_value = incident_search_value.get()
+    multi_run = False
+    rsession = requests.Session()
+
+    logger.debug(
+        "Creating appropriate params/payload for Incident Search Type: %s",
+        incident_search_type.get(),
+    )
+    if incident_search_type.get() == "threat_name":
+        get_params = {
+            "limit": GET_LIMIT,
+            "siteIds": site_ids,
+            "resolved": IS_RESOLVED,
+            "threatDetails__contains": f'"{search_value}"',
+        }
+        add_note_payload = json.dumps(
+            {
+                "filter": {
+                    "limit": POST_LIMIT,
+                    "siteIds": site_ids,
+                    "resolved": IS_RESOLVED,
+                    "threatDetails__contains": f'"{search_value}"',
+                },
+                "data": {"text": new_note},
+            }
+        )
+        update_incident_payload = json.dumps(
+            {
+                "filter": {
+                    "limit": POST_LIMIT,
+                    "siteIds": site_ids,
+                    "resolved": IS_RESOLVED,
+                    "threatDetails__contains": f'"{search_value}"',
+                },
+                "data": {
+                    "incidentStatus": RESOLVED_STATUS,
+                    "analystVerdict": new_verdict,
+                },
+            }
+        )
+        logger.debug(
+            "get_params = %s\nadd_note_payload = %s\nupdate_incident_payload = %s",
+            get_params,
+            add_note_payload,
+            update_incident_payload,
+        )
+    else:
+        get_params = {
+            "limit": GET_LIMIT,
+            "siteIds": site_ids,
+            "resolved": IS_RESOLVED,
+            "contentHashes": search_value,
+        }
+        add_note_payload = json.dumps(
+            {
+                "filter": {
+                    "limit": POST_LIMIT,
+                    "siteIds": site_ids,
+                    "resolved": IS_RESOLVED,
+                    "contentHashes": search_value,
+                },
+                "data": {"text": new_note},
+            }
+        )
+        update_incident_payload = json.dumps(
+            {
+                "filter": {
+                    "limit": POST_LIMIT,
+                    "siteIds": site_ids,
+                    "resolved": IS_RESOLVED,
+                    "contentHashes": search_value,
+                },
+                "data": {
+                    "incidentStatus": RESOLVED_STATUS,
+                    "analystVerdict": new_verdict,
+                },
+            }
+        )
+        logger.debug(
+            "get_params = %s\nadd_note_payload = %s\nupdate_incident_payload = %s",
+            get_params,
+            add_note_payload,
+            update_incident_payload,
+        )
+
+    logger.info(
+        "Checking for total number of unresolved incidents for: %s", search_value
+    )
+
+    with rsession as new_session:
+        url = PARTIAL_URL + THREAT_ENDPOINT
+        response = new_session.get(
+            url=url,
+            headers=headers,
+            params=get_params,
+            proxies={"http": PROXY.get(), "https": PROXY.get()},
+            verify=USE_SSL.get(),
+        )
+        logger.debug(
+            "Making API Call with the following:\nURL: %s\tHeaders: %s\tProxy: %s\tUse SSL: %s",
+            url,
+            headers,
+            PROXY.get(),
+            USE_SSL.get(),
+        )
+        if response.status_code != 200:
+            logger.error(
+                "Status: %s Problem with the request. Details - %s ",
+                str(response.status_code),
+                str(response.text),
+            )
+        response.raise_for_status()
+
+        total_incidents = int(response.json()["pagination"]["totalItems"])
+
+    if not total_incidents:
+        logger.info(
+            "Total unresolved incidents is %d. Nothing to change.",
+            total_incidents,
+        )
+    else:
+        logger.info(
+            "Total unresolved incidents is %d. Starting to update and resolve incidents",
+            total_incidents,
+        )
+        multi_run = True
+
+    while multi_run:
+        logger.info("Adding '%s' as a note to threat incidents", new_note)
+        with rsession as new_session:
+            url = PARTIAL_URL + NOTE_ENDPOINT
+            response = new_session.post(
+                url=url,
+                headers=headers,
+                data=add_note_payload,
+                proxies={"http": PROXY.get(), "https": PROXY.get()},
+                verify=USE_SSL.get(),
+            )
+            logger.debug(
+                "Making API Call with the following:\nURL: %s\tHeaders: %s\tProxy: %s\tUse SSL: %s",
+                url,
+                headers,
+                PROXY.get(),
+                USE_SSL.get(),
+            )
+            response.raise_for_status()
+
+        logger.info(
+            "Setting Analyst Verdict to '%s' and Incident Status to '%s'",
+            new_verdict,
+            RESOLVED_STATUS,
+        )
+        with rsession as new_session:
+            url = PARTIAL_URL + INCIDENT_ENDPOINT
+            response = new_session.post(
+                url=url,
+                headers=headers,
+                data=update_incident_payload,
+                proxies={"http": PROXY.get(), "https": PROXY.get()},
+                verify=USE_SSL.get(),
+            )
+            logger.debug(
+                "Making API Call with the following:\nURL: %s\tHeaders: %s\tProxy: %s\tUse SSL: %s",
+                url,
+                headers,
+                PROXY.get(),
+                USE_SSL.get(),
+            )
+            if response.status_code != 200:
+                logger.error(
+                    "Status: %s Problem with the request. Details - %s ",
+                    str(response.status_code),
+                    str(response.text),
+                )
+            response.raise_for_status()
+
+        logger.info("Checking if there are more incidents to update")
+        with rsession as new_session:
+            url = PARTIAL_URL + THREAT_ENDPOINT
+            response = new_session.get(
+                url=url,
+                headers=headers,
+                params=get_params,
+                proxies={"http": PROXY.get(), "https": PROXY.get()},
+                verify=USE_SSL.get(),
+            )
+            logger.debug(
+                "Making API Call with the following:\nURL: %s\tHeaders: %s\tProxy: %s\tUse SSL: %s",
+                url,
+                headers,
+                PROXY.get(),
+                USE_SSL.get(),
+            )
+            if response.status_code != 200:
+                logger.error(
+                    "Status: %s Problem with the request. Details - %s ",
+                    str(response.status_code),
+                    str(response.text),
+                )
+            response.raise_for_status()
+
+            total_incidents = int(response.json()["pagination"]["totalItems"])
+
+        if not total_incidents:
+            logger.info(
+                "Total remaining unresolved incidents is '0', setting multi_run to False."
+            )
+            multi_run = False
+        else:
+            logger.info(
+                "Total remaining unresolved incidents is %d. Continuing to update and resolve incidents",
+                total_incidents,
+            )
+
+    logger.info("Done! Incidents resolved.\n")
+
+
 # Login Menu Frame #############################
 tk.Label(master=LOGIN_MENU_FRAME, image=LOGO).grid(
     row=0, column=0, columnspan=1, pady=20
@@ -2426,37 +2673,26 @@ ttk.Button(
     text="Export Endpoint Tags",
     command=partial(switch_frames, EXPORT_ENDPOINT_TAGS_FRAME),
     width=32,
-).grid(row=6, column=0, sticky="ew", ipady=5, pady=5, padx=5)
+).grid(row=2, column=1, sticky="ew", ipady=5, pady=5, padx=5)
 ttk.Button(
     master=MAIN_MENU_FRAME,
     text="Export Local Config",
     command=partial(switch_frames, EXPORT_LOCAL_CONFIG_FRAME),
     width=32,
-).grid(row=2, column=1, sticky="ew", ipady=5, pady=5, padx=5)
+).grid(row=3, column=1, sticky="ew", ipady=5, pady=5, padx=5)
 ttk.Button(
     master=MAIN_MENU_FRAME,
     text="Export Users",
     command=partial(switch_frames, EXPORT_USERS_FRAME),
     width=32,
-).grid(row=3, column=1, sticky="ew", ipady=5, pady=5, padx=5)
+).grid(row=4, column=1, sticky="ew", ipady=5, pady=5, padx=5)
 ttk.Button(
     master=MAIN_MENU_FRAME,
     text="Export Ranger Inventory",
     command=partial(switch_frames, EXPORT_RANGER_INV_FRAME),
     width=32,
-).grid(row=4, column=1, sticky="ew", ipady=5, pady=5, padx=5)
-# ttk.Button(
-#     master=mainMenuFrame,
-#     text="-",
-#     state=tk.DISABLED,
-#     width=32,
-# ).grid(row=5, column=1, sticky="ew", ipady=5, pady=5, padx=5)
-# ttk.Button(
-#     master=mainMenuFrame,
-#     text="-",
-#     state=tk.DISABLED,
-#     width=32,
-# ).grid(row=6, column=1, sticky="ew", ipady=5, pady=5, padx=5)
+).grid(row=5, column=1, sticky="ew", ipady=5, pady=5, padx=5)
+
 
 # Manage - Column 2
 tk.Label(
@@ -2491,37 +2727,14 @@ ttk.Button(
     text="Manage Endpoint Tags",
     command=partial(switch_frames, MANAGE_ENDPOINT_TAGS_FRAME),
     width=32,
-).grid(row=6, column=2, sticky="ew", ipady=5, pady=5, padx=5)
-# ttk.Button(
-#     master=mainMenuFrame,
-#     text="-",
-#     state=tk.DISABLED,
-#     width=32,
-# ).grid(row=2, column=3, sticky="ew", ipady=5, pady=5, padx=5)
-# ttk.Button(
-#     master=mainMenuFrame,
-#     text="-",
-#     state=tk.DISABLED,
-#     width=32,
-# ).grid(row=3, column=3, sticky="ew", ipady=5, pady=5, padx=5)
-# ttk.Button(
-#     master=mainMenuFrame,
-#     text="-",
-#     state=tk.DISABLED,
-#     width=32,
-# ).grid(row=4, column=3, sticky="ew", ipady=5, pady=5, padx=5)
-# ttk.Button(
-#     master=mainMenuFrame,
-#     text="-",
-#     state=tk.DISABLED,
-#     width=32,
-# ).grid(row=5, column=3, sticky="ew", ipady=5, pady=5, padx=5)
-# ttk.Button(
-#     master=mainMenuFrame,
-#     text="-",
-#     state=tk.DISABLED,
-#     width=32,
-# ).grid(row=6, column=3, sticky="ew", ipady=5, pady=5, padx=5)
+).grid(row=2, column=3, sticky="ew", ipady=5, pady=5, padx=5)
+ttk.Button(
+    master=MAIN_MENU_FRAME,
+    text="Bulk Resolve Threats",
+    command=partial(switch_frames, BULK_RESOLVE_THREATS_FRAME),
+    width=32,
+).grid(row=3, column=3, sticky="ew", ipady=5, pady=5, padx=5)
+
 
 if LOG_LEVEL == logging.DEBUG:
     ttk.Label(
@@ -3052,6 +3265,69 @@ ttk.Button(
     text="Back to Main Menu",
     command=go_back_to_mainpage,
 ).grid(row=10, column=0, columnspan=2, ipadx=10, pady=10)
+
+
+# Bulk Resolve Threats Frame #############################
+tk.Label(
+    master=BULK_RESOLVE_THREATS_FRAME,
+    text="Bulk Resolve Threats",
+    font=FRAME_TITLE_FONT,
+).grid(row=0, column=0, columnspan=2, padx=20, pady=20)
+tk.Label(
+    master=BULK_RESOLVE_THREATS_FRAME,
+    text="Adds a note to each matching unresolved Incident then Resolves them with the specified Analyst Verdict.",
+    font=FRAME_SUBTITLE_FONT,
+).grid(row=1, column=0, columnspan=2, padx=20, pady=2)
+tk.Label(
+    master=BULK_RESOLVE_THREATS_FRAME,
+    text="1. Select incident search type",
+).grid(row=2, column=0, columnspan=2, padx=20, pady=2)
+incident_search_type = tk.StringVar()
+incident_search_type.set("threat_name")
+ttk.Radiobutton(
+    BULK_RESOLVE_THREATS_FRAME,
+    text="Threat Name",
+    variable=incident_search_type,
+    value="threat_name",
+).grid(row=3, column=0, padx=10, pady=2, sticky="e")
+ttk.Radiobutton(
+    BULK_RESOLVE_THREATS_FRAME,
+    text="SHA1",
+    variable=incident_search_type,
+    value="content_hash",
+).grid(row=3, column=1, padx=10, pady=2, sticky="w")
+tk.Label(
+    master=BULK_RESOLVE_THREATS_FRAME,
+    text="2. Input partial or complete threat name, or SHA1 based on above choice",
+).grid(row=4, column=0, columnspan=2, padx=20, pady=2)
+incident_search_value = ttk.Entry(master=BULK_RESOLVE_THREATS_FRAME, width=80)
+incident_search_value.grid(row=5, column=0, columnspan=2, pady=10)
+tk.Label(
+    master=BULK_RESOLVE_THREATS_FRAME,
+    text="3. Select Analyst Verdict",
+).grid(row=6, column=0, columnspan=2, padx=20, pady=2)
+available_verdicts = ("", "undefined", "suspicious", "false_positive", "true_positive")
+selected_analyst_verdict = tk.StringVar()
+selected_analyst_verdict.set(available_verdicts[1])
+ttk.OptionMenu(
+    BULK_RESOLVE_THREATS_FRAME, selected_analyst_verdict, *available_verdicts
+).grid(row=7, column=0, columnspan=2, pady=10)
+tk.Label(
+    master=BULK_RESOLVE_THREATS_FRAME,
+    text="4. Input one or more Site IDs, comma-separated with no spaces",
+).grid(row=8, column=0, columnspan=2, padx=20, pady=2)
+site_ids_list = ttk.Entry(master=BULK_RESOLVE_THREATS_FRAME, width=80)
+site_ids_list.grid(row=9, column=0, columnspan=2, pady=10)
+ttk.Button(
+    master=BULK_RESOLVE_THREATS_FRAME,
+    text="Resolve Incidents",
+    command=bulk_resolve_threats,
+).grid(row=10, column=0, columnspan=2, pady=10)
+ttk.Button(
+    master=BULK_RESOLVE_THREATS_FRAME,
+    text="Back to Main Menu",
+    command=go_back_to_mainpage,
+).grid(row=11, column=0, columnspan=2, ipadx=10, pady=10)
 
 
 window.mainloop()
