@@ -24,7 +24,7 @@ The S1 Manager tool is a GUI-based application to assist SentinelOne administrat
 ## Getting Started
 
 ### Download EXE
-To download the latest release:
+To download the latest EXE build:
 - [https://github.com/DylanCS1/s1_manager/releases/download/v2022.1.1/s1_manager-2022.1.1.exe](https://github.com/DylanCS1/s1_manager/releases/download/v2022.1.1/s1_manager-2022.1.1.exe)
 - SHA1: 76BD55DBC2F4CABB1F5066ABB1D82342A9043AB2
 
@@ -304,6 +304,22 @@ Process:
 2. Input the **Endpoint Tag ID** to add/remove
 3. Select the **Agent Identifier Type** used in your source CSV (Agent UUID or Endpoint Name)
 4. Select a CSV file containing a single column of agent UUIDs or endpoint names (this should align with your selection in step 3)
+
+
+
+### Bulk Resolve Threats
+
+Adds a predefined note and sets the selected Analyst Verdict on a large group of threats (incidents) that match the searched value, then closes the incidents as Resolved.
+
+Process:
+1. Select incident search type: **Threat Name** or **SHA1**
+2. Input an appropriate search string based on the choice made above
+   - *Threat Name* = A partial or complete search string. Search is not case-sensitive, and multiple words should not be enclosed in quotes.
+      > May have unexpected results with special characters.
+   - *SHA1* = One or more comma-separated SHA1s (do not include any whitespace)
+3. Select the **Analyst Verdict** from the drop-down: *undefined*, *suspicous*, *false_positive*, or *true_positive*
+4. Input one or more **Site IDs**, separated by a comma (do not include spaces)
+
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
