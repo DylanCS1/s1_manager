@@ -25,8 +25,8 @@ The S1 Manager tool is a GUI-based application to assist SentinelOne administrat
 
 ### Download EXE
 To download the latest EXE build:
-- [https://github.com/DylanCS1/s1_manager/releases/download/v2022.1.1/s1_manager-2022.1.1.exe](https://github.com/DylanCS1/s1_manager/releases/download/v2022.1.1/s1_manager-2022.1.1.exe)
-- SHA1: 76BD55DBC2F4CABB1F5066ABB1D82342A9043AB2
+- [https://github.com/DylanCS1/s1_manager/releases/download/v2022.1.6/s1_manager-2022.1.6.exe](https://github.com/DylanCS1/s1_manager/releases/download/v2022.1.6/s1_manager-2022.1.6.exe)
+- SHA1: 1F8E05D596DC8FD1180A6DC2B120220AD687C5B9
 
 To download the pre-2022 release:
 - [https://github.com/DylanCS1/s1_manager/raw/main/.COMPILED/s1_manager-1.0.exe](https://github.com/DylanCS1/s1_manager/raw/main/.COMPILED/s1_manager-1.0.exe)
