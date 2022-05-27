@@ -1,6 +1,12 @@
 """ s1_manager.py 
     Source: https://github.com/DylanCS1/s1_manager
     License: MIT license - https://github.com/DylanCS1/s1_manager/blob/main/LICENSE.txt
+
+    # TODO: Update readme
+        - new version number
+        - Update Sys Config details
+        - new screenshot
+        - new SHA1
 """
 
 import asyncio
@@ -16,6 +22,8 @@ import tkinter as tk
 import tkinter.filedialog
 import tkinter.scrolledtext as ScrolledText
 from functools import partial
+from multiprocessing.sharedctypes import Value
+from pathlib import Path
 from tkinter import UNDERLINE, ttk
 
 import aiohttp
@@ -24,7 +32,7 @@ from PIL import Image, ImageTk
 from xlsxwriter.workbook import Workbook
 
 # CONSTS
-__version__ = "2022.1.4"
+__version__ = "2022.1.6"
 API_VERSION = "v2.1"
 DIR_PATH = os.path.dirname(os.path.realpath(__file__))
 QUERY_LIMITS = "limit=1000"
@@ -78,11 +86,12 @@ ASSIGN_CUSTOMER_ID_FRAME = ttk.Frame()
 DECOMMISSION_AGENTS_FRAME = ttk.Frame()
 MANAGE_ENDPOINT_TAGS_FRAME = ttk.Frame()
 BULK_RESOLVE_THREATS_FRAME = ttk.Frame()
+UPDATE_SYSTEM_CONFIG_FRAME = ttk.Frame()
 ERROR = tk.StringVar()
 HOSTNAME = tk.StringVar()
 API_TOKEN = tk.StringVar()
 PROXY = tk.StringVar()
-INPUT_CSV = tk.StringVar()
+INPUT_FILE = tk.StringVar()
 USE_SSL = tk.BooleanVar()
 USE_SSL.set(True)
 USE_SCHEDULE = tk.BooleanVar()
@@ -191,7 +200,7 @@ def go_back_to_mainpage():
 
 def switch_frames(framename):
     """Function to handle switching tkinter frames"""
-    INPUT_CSV.set("")
+    INPUT_FILE.set("")
     MAIN_MENU_FRAME.pack_forget()
     framename.pack()
 
@@ -199,7 +208,7 @@ def switch_frames(framename):
 def select_csv_file():
     """Basic function to present user with browse window to source a CSV file for input"""
     file = tkinter.filedialog.askopenfilename()
-    INPUT_CSV.set(file)
+    INPUT_FILE.set(file)
 
 
 # Tool operation functions
@@ -731,8 +740,8 @@ def upgrade_from_csv(justPackages):
                     url = None
         logger.info("SentinelOne agent packages list written to: %s", csv_filename)
     else:
-        with open(INPUT_CSV.get()) as csv_file:
-            logger.debug("Reading CSV: %s", INPUT_CSV.get())
+        with open(INPUT_FILE.get()) as csv_file:
+            logger.debug("Reading CSV: %s", INPUT_FILE.get())
             csv_reader = csv.reader(csv_file, delimiter=",")
             line_count = 0
             logger.debug("Use Schedule value: %s", USE_SCHEDULE.get())
@@ -782,7 +791,7 @@ def upgrade_from_csv(justPackages):
                         )
                 line_count += 1
             if line_count < 1:
-                logger.info("Finished! Input file %s was empty.", INPUT_CSV.get())
+                logger.info("Finished! Input file %s was empty.", INPUT_FILE.get())
             else:
                 logger.info("Finished! Processed %d lines.", line_count)
 
@@ -853,7 +862,7 @@ def move_agents(justGroups):
                     url = None
         logger.info("Added group mapping to the file %s", csv_filename)
     else:
-        with open(INPUT_CSV.get()) as csv_file:
+        with open(INPUT_FILE.get()) as csv_file:
             csv_reader = csv.reader(csv_file, delimiter=",")
             line_count = 0
             for row in csv_reader:
@@ -922,7 +931,7 @@ def move_agents(justGroups):
                     logger.info("Moved %s endpoints", data["data"]["agentsMoved"])
                 line_count += 1
             if line_count < 1:
-                logger.info("Finished! Input file %s was empty.", INPUT_CSV.get())
+                logger.info("Finished! Input file %s was empty.", INPUT_FILE.get())
             else:
                 logger.info("Finished! Processed %d lines.", line_count)
 
@@ -943,8 +952,8 @@ def assign_customer_id():
     logger = logging.getLogger()
     logger.addHandler(text_handler)
 
-    with open(INPUT_CSV.get()) as csv_file:
-        logger.debug("Reading CSV: %s", INPUT_CSV.get())
+    with open(INPUT_FILE.get()) as csv_file:
+        logger.debug("Reading CSV: %s", INPUT_FILE.get())
         csv_reader = csv.reader(csv_file, delimiter=",")
         line_count = 0
         for row in csv_reader:
@@ -993,7 +1002,7 @@ def assign_customer_id():
                     logger.info("Successfully updated the customer identifier")
             line_count += 1
         if line_count < 1:
-            logger.info("Finished! Input file %s was empty.", INPUT_CSV.get())
+            logger.info("Finished! Input file %s was empty.", INPUT_FILE.get())
         else:
             logger.info("Finished! Processed %d lines.", line_count)
 
@@ -1129,8 +1138,8 @@ def decommission_agents():
     logger = logging.getLogger()
     logger.addHandler(text_handler)
 
-    with open(INPUT_CSV.get()) as csv_file:
-        logger.debug("Reading CSV: %s", INPUT_CSV.get())
+    with open(INPUT_FILE.get()) as csv_file:
+        logger.debug("Reading CSV: %s", INPUT_FILE.get())
         csv_reader = csv.reader(csv_file, delimiter=",")
         line_count = 0
         for row in csv_reader:
@@ -1218,7 +1227,7 @@ def decommission_agents():
                             logger.info("Successfully decommissioned the endpoint")
             line_count += 1
         if line_count < 1:
-            logger.info("Finished! Input file %s was empty.", INPUT_CSV.get())
+            logger.info("Finished! Input file %s was empty.", INPUT_FILE.get())
         else:
             logger.info("Finished! Processed %d lines.", line_count)
 
@@ -1901,8 +1910,8 @@ def manage_endpoint_tags():
 
     logger.debug("Specified an ID type of: %s", id_type)
 
-    with open(INPUT_CSV.get()) as csv_file:
-        logger.debug("Reading CSV: %s", INPUT_CSV.get())
+    with open(INPUT_FILE.get()) as csv_file:
+        logger.debug("Reading CSV: %s", INPUT_FILE.get())
         csv_reader = csv.reader(csv_file, delimiter=",")
         line_count = 0
 
@@ -1949,7 +1958,7 @@ def manage_endpoint_tags():
                     logger.info("Successfully updated the Endpoint Tag")
             line_count += 1
         if line_count < 1:
-            logger.info("Finished! Input file %s was empty.", INPUT_CSV.get())
+            logger.info("Finished! Input file %s was empty.", INPUT_FILE.get())
         else:
             logger.info("Finished! Processed %d lines.", line_count)
 
@@ -1973,8 +1982,8 @@ def export_local_config():
     datestamp = datetime.datetime.now().strftime("%Y-%m-%d_%f")
     json_file = f"Local_Config_Export_{datestamp}.json"
 
-    with open(INPUT_CSV.get()) as csv_file:
-        logger.debug("Reading CSV: %s", INPUT_CSV.get())
+    with open(INPUT_FILE.get()) as csv_file:
+        logger.debug("Reading CSV: %s", INPUT_FILE.get())
         csv_reader = csv.reader(csv_file, delimiter=",")
 
         for row in csv_reader:
@@ -2244,7 +2253,7 @@ def export_ranger():
         scope_param = "siteIds"
     else:
         scope_param = "accountIds"
-    if not INPUT_CSV.get():
+    if not INPUT_FILE.get():
         logger.error("Must select a CSV containing Account or Site IDs")
 
     datestamp = datetime.datetime.now().strftime("%Y-%m-%d")
@@ -2252,12 +2261,11 @@ def export_ranger():
     logger.debug(
         "Input options:\n\tScope: %s\n\tScope ID CSV: %s\n\tTime Period: %s",
         export_scope,
-        INPUT_CSV.get(),
+        INPUT_FILE.get(),
         ranger_time_period,
     )
-
-    with open(INPUT_CSV.get()) as csv_file:
-        logger.debug("Reading CSV: %s", INPUT_CSV.get())
+    with open(f"{str(INPUT_FILE.get())}") as csv_file:
+        logger.debug("Reading CSV: %s", INPUT_FILE.get())
         csv_reader = csv.reader(csv_file, delimiter=",")
         for row in csv_reader:
             logger.info(
@@ -2325,6 +2333,86 @@ def export_ranger():
                         url = None
                 logger.info("Finished writing to %s", csv_filename)
         logger.info("Done exporting Ranger Inventory.")
+
+
+def export_account_ids():
+    """Function to get all Account IDs for a tenant"""
+    st = ScrolledText.ScrolledText(
+        master=UPDATE_SYSTEM_CONFIG_FRAME, state="disabled", height=10
+    )
+    st.configure(font=ST_FONT)
+    st.grid(row=13, column=0, columnspan=2, pady=10)
+    text_handler = TextHandler(st)
+    logging.basicConfig(
+        filename=LOG_NAME,
+        level=LOG_LEVEL,
+        format=LOG_FORMAT,
+    )
+    logger = logging.getLogger()
+    logger.addHandler(text_handler)
+
+    endpoint = f"/web/api/{API_VERSION}/accounts?states=active&{QUERY_LIMITS}&sortBy=name&sortOrder=asc"
+    url = HOSTNAME.get() + endpoint
+    acct_ids_list = []
+
+    while url:
+        logger.debug(
+            "Making API Call with the following:\nURL: %s\tHeaders: %s\tProxy: %s\tUse SSL: %s",
+            url,
+            headers,
+            PROXY.get(),
+            USE_SSL.get(),
+        )
+        response = requests.get(
+            url,
+            headers=headers,
+            proxies={"http": PROXY.get(), "https": PROXY.get()},
+            verify=USE_SSL.get(),
+        )
+        if response.status_code != 200:
+            logger.error(
+                "Status: %s Problem with the request. Details - %s ",
+                str(response.status_code),
+                str(response.text),
+            )
+            break
+        else:
+            data = response.json()
+            cursor = data["pagination"]["nextCursor"]
+            data = data["data"]
+            if not data:
+                logger.info("No Ranger Inventory data returned. Exiting")
+                url = None
+                continue
+            else:
+                for _, value in enumerate(data):
+                    new_acct = {
+                        "Account ID": value["id"],
+                        "Account Name": value["name"],
+                    }
+                    acct_ids_list.append(new_acct)
+            if cursor:
+                paramsnext = endpoint + f"&cursor={cursor}"
+                url = HOSTNAME.get() + paramsnext
+                logger.debug("Next cursor found, updating URL: %s", url)
+            else:
+                logger.debug("No cursor found, setting URL to None")
+                url = None
+
+    csv_filename = "Account-IDs.csv"
+    csv_columns = ["Account ID", "Account Name"]
+    logger.debug("Opening %s to write", csv_filename)
+    with open(csv_filename, "a+", newline="", encoding="utf-8") as file:
+        csv_writer = csv.DictWriter(file, fieldnames=csv_columns)
+        csv_writer.writeheader()
+        logger.debug("Writing data to %s", csv_filename)
+
+        for row in acct_ids_list:
+            csv_writer.writerow(row)
+
+        logger.info("Finished writing to %s", csv_filename)
+
+    logger.info("Done exporting Account IDs.")
 
 
 def bulk_resolve_threats():
@@ -2572,6 +2660,102 @@ def bulk_resolve_threats():
     logger.info("Done! Incidents resolved.\n")
 
 
+def update_sys_config():
+    """Function to read in a JSON configuration to update Account level system configuration settings."""
+    st = ScrolledText.ScrolledText(
+        master=UPDATE_SYSTEM_CONFIG_FRAME, state="disabled", height=10
+    )
+    st.configure(font=ST_FONT)
+    st.grid(row=13, column=0, columnspan=2, pady=10)
+    text_handler = TextHandler(st)
+    logging.basicConfig(
+        filename=LOG_NAME,
+        level=LOG_LEVEL,
+        format=LOG_FORMAT,
+    )
+    logger = logging.getLogger()
+    logger.addHandler(text_handler)
+
+    if not site_acct_ids_list.get():
+        logger.error("Must input one or more Account IDs.")
+    elif not INPUT_FILE.get():
+        logger.error(
+            "Must select a JSON file containing the new configuration to apply."
+        )
+    else:
+        endpoint = f"/web/api/{API_VERSION}/system/configuration"
+        url = HOSTNAME.get() + endpoint
+        ids_list = [x for x in site_acct_ids_list.get().split(",")]
+        logger.debug("ID List: %s", ids_list)
+        file_name = Path(INPUT_FILE.get())
+        valid_json = False
+
+        with open(file_name, "r", encoding="utf-8") as file:
+            logger.info("Reading %s", file_name)
+            try:
+                new_config = json.loads(file.read())
+                logger.debug("%s appears to contain valid JSON", file_name.name)
+                logger.debug("New config JSON contents: %s", new_config)
+                valid_json = True
+            except ValueError as exc:
+                logger.error(
+                    "%s possibly contains invalid JSON, please validate it and try again. %s",
+                    file_name.name,
+                    exc,
+                )
+                valid_json = False
+
+        if valid_json:
+            for new_id in ids_list:
+                id_type = update_sites_or_accts.get()
+                logger.debug("Current ID: %s", new_id)
+                if isinstance(new_config, str):
+                    new_config = json.loads(new_config)
+                try:
+                    logger.info(
+                        "Updating JSON 'filter' with '%s':'%s'", id_type, new_id
+                    )
+                    if id_type == "siteIds":
+                        new_config["filter"]["siteIds"] = new_id
+                    elif id_type == "accountIds":
+                        new_config["filter"]["accountIds"] = new_id
+                except KeyError as err:
+                    logger.error(
+                        "Invalid key found in JSON. Ensure you selected the correct option between 'Sites' and 'Accounts', and that your JSON is correctly defined.\n%s",
+                        err,
+                    )
+                    break
+
+                new_config = json.dumps(new_config)
+                logger.debug("Configuration: %s", new_config)
+
+                response = requests.put(
+                    url=url,
+                    headers=headers,
+                    data=new_config,
+                    proxies={"http": PROXY.get(), "https": PROXY.get()},
+                    verify=USE_SSL.get(),
+                )
+                logger.debug(
+                    "Making API Call with the following:\nURL: %s\tHeaders: %s\tProxy: %s\tUse SSL: %s",
+                    url,
+                    headers,
+                    PROXY.get(),
+                    USE_SSL.get(),
+                )
+                if response.status_code != 200:
+                    logger.error(
+                        "Status: %s Problem with the request. Details - %s ",
+                        str(response.status_code),
+                        str(response.text),
+                    )
+                    break
+                response.raise_for_status()
+                logger.info("System configuration updated for %s", new_id)
+
+            logger.info("Finished.")
+
+
 # Login Menu Frame #############################
 tk.Label(master=LOGIN_MENU_FRAME, image=LOGO).grid(
     row=0, column=0, columnspan=1, pady=20
@@ -2734,6 +2918,12 @@ ttk.Button(
     command=partial(switch_frames, BULK_RESOLVE_THREATS_FRAME),
     width=32,
 ).grid(row=3, column=3, sticky="ew", ipady=5, pady=5, padx=5)
+ttk.Button(
+    master=MAIN_MENU_FRAME,
+    text="Update System Config",
+    command=partial(switch_frames, UPDATE_SYSTEM_CONFIG_FRAME),
+    width=32,
+).grid(row=4, column=3, sticky="ew", ipady=5, pady=5, padx=5)
 
 
 if LOG_LEVEL == logging.DEBUG:
@@ -2855,7 +3045,7 @@ ttk.Button(
     text="Browse",
     command=select_csv_file,
 ).grid(row=7, column=0, pady=2)
-tk.Label(master=UPGRADE_FROM_CSV_FRAME, textvariable=INPUT_CSV).grid(
+tk.Label(master=UPGRADE_FROM_CSV_FRAME, textvariable=INPUT_FILE).grid(
     row=8, column=0, pady=2
 )
 use_schedule_switch = ttk.Checkbutton(
@@ -2914,7 +3104,7 @@ tk.Label(
 ttk.Button(master=MOVE_AGENTS_FRAME, text="Browse", command=select_csv_file).grid(
     row=6, column=0, pady=10
 )
-tk.Label(master=MOVE_AGENTS_FRAME, textvariable=INPUT_CSV).grid(
+tk.Label(master=MOVE_AGENTS_FRAME, textvariable=INPUT_FILE).grid(
     row=7, column=0, pady=10
 )
 ttk.Button(
@@ -2955,7 +3145,7 @@ ttk.Button(
     text="Browse",
     command=select_csv_file,
 ).grid(row=5, column=0, pady=10)
-tk.Label(master=ASSIGN_CUSTOMER_ID_FRAME, textvariable=INPUT_CSV).grid(
+tk.Label(master=ASSIGN_CUSTOMER_ID_FRAME, textvariable=INPUT_FILE).grid(
     row=6, column=0, pady=10
 )
 ttk.Button(
@@ -2985,7 +3175,7 @@ ttk.Button(
     text="Browse",
     command=select_csv_file,
 ).grid(row=2, column=0, pady=10)
-tk.Label(master=DECOMMISSION_AGENTS_FRAME, textvariable=INPUT_CSV).grid(
+tk.Label(master=DECOMMISSION_AGENTS_FRAME, textvariable=INPUT_FILE).grid(
     row=3, column=0, pady=10
 )
 ttk.Button(
@@ -3132,7 +3322,7 @@ ttk.Button(
     text="Browse",
     command=select_csv_file,
 ).grid(row=9, column=0, columnspan=2, pady=10)
-tk.Label(master=MANAGE_ENDPOINT_TAGS_FRAME, textvariable=INPUT_CSV).grid(
+tk.Label(master=MANAGE_ENDPOINT_TAGS_FRAME, textvariable=INPUT_FILE).grid(
     row=10, column=0, columnspan=2, pady=10
 )
 ttk.Button(
@@ -3163,7 +3353,7 @@ ttk.Button(
     text="Browse",
     command=select_csv_file,
 ).grid(row=3, column=0, pady=10)
-tk.Label(master=EXPORT_LOCAL_CONFIG_FRAME, textvariable=INPUT_CSV).grid(
+tk.Label(master=EXPORT_LOCAL_CONFIG_FRAME, textvariable=INPUT_FILE).grid(
     row=4, column=0, pady=10
 )
 ttk.Button(
@@ -3242,7 +3432,7 @@ ttk.Button(
     text="Browse",
     command=select_csv_file,
 ).grid(row=5, column=0, columnspan=2, pady=2)
-tk.Label(master=EXPORT_RANGER_INV_FRAME, textvariable=INPUT_CSV).grid(
+tk.Label(master=EXPORT_RANGER_INV_FRAME, textvariable=INPUT_FILE).grid(
     row=6, column=0, columnspan=2, pady=2
 )
 tk.Label(
@@ -3328,6 +3518,92 @@ ttk.Button(
     text="Back to Main Menu",
     command=go_back_to_mainpage,
 ).grid(row=11, column=0, columnspan=2, ipadx=10, pady=10)
+
+
+# Update System Config Frame #############################
+tk.Label(
+    master=UPDATE_SYSTEM_CONFIG_FRAME,
+    text="Update System Config",
+    font=FRAME_TITLE_FONT,
+).grid(row=0, column=0, columnspan=2, padx=20, pady=20)
+tk.Label(
+    master=UPDATE_SYSTEM_CONFIG_FRAME,
+    text="Updates the system configuration settings for one or more Accounts.",
+    font=FRAME_SUBTITLE_FONT,
+).grid(row=1, column=0, columnspan=2, padx=20, pady=2)
+tk.Label(
+    master=UPDATE_SYSTEM_CONFIG_FRAME,
+    text="1. Select if updating Sites or Accounts",
+).grid(row=2, column=0, columnspan=2, padx=20, pady=2)
+update_sites_or_accts = tk.StringVar()
+update_sites_or_accts.set("siteIds")
+ttk.Radiobutton(
+    UPDATE_SYSTEM_CONFIG_FRAME,
+    text="Sites",
+    variable=update_sites_or_accts,
+    value="siteIds",
+).grid(row=3, column=0, padx=10, pady=2, sticky="e")
+ttk.Radiobutton(
+    UPDATE_SYSTEM_CONFIG_FRAME,
+    text="Accounts",
+    variable=update_sites_or_accts,
+    value="accountIds",
+).grid(row=3, column=1, padx=10, pady=2, sticky="w")
+tk.Label(
+    master=UPDATE_SYSTEM_CONFIG_FRAME,
+    text="2. Input one or more IDs, comma-separated with no spaces",
+).grid(row=4, column=0, columnspan=2, padx=20, pady=2)
+site_acct_ids_list = ttk.Entry(master=UPDATE_SYSTEM_CONFIG_FRAME, width=80)
+site_acct_ids_list.grid(row=5, column=0, columnspan=2, pady=10)
+tk.Label(
+    master=UPDATE_SYSTEM_CONFIG_FRAME,
+    text="3. Select JSON file with new configuration",
+).grid(row=6, column=0, columnspan=2, padx=20, pady=2)
+ttk.Button(
+    master=UPDATE_SYSTEM_CONFIG_FRAME,
+    text="Browse",
+    command=select_csv_file,
+).grid(row=7, column=0, columnspan=2, pady=10)
+tk.Label(master=UPDATE_SYSTEM_CONFIG_FRAME, textvariable=INPUT_FILE).grid(
+    row=8, column=0, columnspan=2, pady=2
+)
+ttk.Button(
+    master=UPDATE_SYSTEM_CONFIG_FRAME,
+    text="Update",
+    command=update_sys_config,
+).grid(row=9, column=0, columnspan=2, pady=10)
+ttk.Button(
+    master=UPDATE_SYSTEM_CONFIG_FRAME,
+    text="Back to Main Menu",
+    command=go_back_to_mainpage,
+).grid(row=10, column=0, columnspan=2, ipadx=10, pady=10)
+
+
+# Export Account, Site, Group IDs Frame #############################
+# tk.Label(
+#     master=UPDATE_SYSTEM_CONFIG_FRAME,
+#     text="Update System Config",
+#     font=FRAME_TITLE_FONT,
+# ).grid(row=0, column=0, columnspan=2, padx=20, pady=20)
+# tk.Label(
+#     master=UPDATE_SYSTEM_CONFIG_FRAME,
+#     text="Updates the system configuration settings for one or more Accounts.",
+#     font=FRAME_SUBTITLE_FONT,
+# ).grid(row=1, column=0, columnspan=2, padx=20, pady=2)
+# tk.Label(
+#     master=UPDATE_SYSTEM_CONFIG_FRAME,
+#     text="(Optional) Export CSV of all Account IDs",
+# ).grid(row=2, column=0, columnspan=2, padx=20, pady=2)
+# ttk.Button(
+#     master=UPDATE_SYSTEM_CONFIG_FRAME,
+#     text="Export",
+#     command=export_account_ids,
+# ).grid(row=3, column=0, columnspan=2, pady=10)
+# ttk.Button(
+#     master=UPDATE_SYSTEM_CONFIG_FRAME,
+#     text="Back to Main Menu",
+#     command=go_back_to_mainpage,
+# ).grid(row=12, column=0, columnspan=2, ipadx=10, pady=10)
 
 
 window.mainloop()

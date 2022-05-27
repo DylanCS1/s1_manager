@@ -212,6 +212,7 @@ Process:
 2. Select a CSV containing a single column of Account or Site IDs to process
 3. Pick a time period for data export
 
+
 <p align="right">(<a href="#top">back to top</a>)</p>
 
 
@@ -319,6 +320,36 @@ Process:
    - *SHA1* = One or more comma-separated SHA1s (do not include any whitespace)
 3. Select the **Analyst Verdict** from the drop-down: *undefined*, *suspicious*, *false_positive*, or *true_positive*
 4. Input one or more **Site IDs**, separated by a comma (do not include spaces)
+
+
+
+### Update System Configuration
+
+Accepts a JSON file with the changes to apply to one, or more, Site or Account IDs. 
+
+Process:
+1. Select whether you are updating one or more Sites or Accounts
+2. Input one, or more, IDs of the type chosen above. *Multiple IDs should be comma-separated with no white space.*
+3. Click browse to select a JSON file with the new configuration to apply (see below for JSON example)
+
+Example JSON:  
+```json
+{
+	"data": {
+		"advancedMode": "true",
+		"uiInactivityTimeoutSeconds": 7200,
+		"rememberMeLength": 1440,
+		"globalTwoFaEnabled": "true",
+		"cloudIntelligenceOn": "true"
+	},
+	"filter": {}
+}
+```
+
+> Not all of the available "data" values are shown above. Refer to the API Docs for a full list of available parameters.  
+
+**Notes:**
+- In the tool's current form, it relies on the "filter" subsection of the JSON - do not remove it.  
 
 
 <p align="right">(<a href="#top">back to top</a>)</p>
