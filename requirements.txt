@@ -12,7 +12,7 @@ future==0.18.2
 idna==3.3
 multidict==6.0.2
 pefile==2021.9.3
-Pillow==9.1.0
+Pillow==9.1.1
 pyinstaller==4.10
 pyinstaller-hooks-contrib==2022.3
 pytz==2022.1
