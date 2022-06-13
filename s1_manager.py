@@ -1,4 +1,4 @@
-""" s1_manager.py 
+""" s1_manager.py
     Source: https://github.com/DylanCS1/s1_manager
     License: MIT license - https://github.com/DylanCS1/s1_manager/blob/main/LICENSE.txt
 
@@ -32,10 +32,11 @@ from PIL import Image, ImageTk
 from xlsxwriter.workbook import Workbook
 
 # CONSTS
-__version__ = "2022.1.6"
+__version__ = "2022.1.7"
 API_VERSION = "v2.1"
 DIR_PATH = os.path.dirname(os.path.realpath(__file__))
 QUERY_LIMITS = "limit=1000"
+headers = {}
 
 # LOG SETTINGS
 if len(sys.argv) > 1 and sys.argv[1] == "--debug":
@@ -131,28 +132,28 @@ def test_login(hostname, apitoken, proxy):
         "Authorization": "ApiToken " + apitoken,
         "Accept": "application/json",
     }
-    r = requests.get(
+    response = requests.get(
         hostname + f"/web/api/{API_VERSION}/system/info",
         headers=headers,
         proxies={"http": proxy, "https": proxy},
         verify=USE_SSL.get(),
     )
 
-    if r.status_code == 200:
+    if response.status_code == 200:
         return headers, True
     else:
         headers = {
             "Content-type": "application/json",
             "Authorization": "Token " + apitoken,
         }
-        r = requests.get(
+        response = requests.get(
             hostname + f"/web/api/{API_VERSION}/system/info",
             headers=headers,
             proxies={"http": proxy, "https": proxy},
             verify=USE_SSL.get(),
         )
-        r.raise_for_status()
-        if r.status_code == 200:
+        response.raise_for_status()
+        if response.status_code == 200:
             return headers, True
         else:
             return 0, False
@@ -180,7 +181,7 @@ def login():
         else:
             tk.Label(
                 master=LOGIN_MENU_FRAME,
-                text="Login to the management console failed. Please check your credentials and try again",
+                text="Authentication failed. Please check credentials and try again",
                 fg=FRAME_NOTE_FG_COLOR,
                 font=FRAME_SUBNOTE_FONT,
             ).grid(row=11, column=0, columnspan=2, pady=10)
@@ -213,13 +214,14 @@ def select_csv_file():
 
 # Tool operation functions
 def export_from_dv():
+    # TODO Retest use
     """Function to export events from Deep Visibility by DV query ID"""
-    st = ScrolledText.ScrolledText(
+    scroll_text = ScrolledText.ScrolledText(
         master=EXPORT_FROM_DV_FRAME, state="disabled", height=10
     )
-    st.configure(font=ST_FONT)
-    st.grid(row=13, column=0, pady=10)
-    text_handler = TextHandler(st)
+    scroll_text.configure(font=ST_FONT)
+    scroll_text.grid(row=13, column=0, pady=10)
+    text_handler = TextHandler(scroll_text)
     logging.basicConfig(
         filename=LOG_NAME,
         level=LOG_LEVEL,
@@ -247,7 +249,7 @@ def export_from_dv():
                 url, headers=headers, proxy=proxy, ssl=USE_SSL.get()
             ) as response:
                 logger.debug(
-                    "Making API Call with the following:\nURL: %s\tHeaders: %s\tProxy: %s\tUse SSL: %s",
+                    "Calling API with the following:\nURL: %s\tHeaders: %s\tProxy: %s\tUse SSL: %s",
                     url,
                     headers,
                     proxy,
@@ -269,7 +271,7 @@ def export_from_dv():
                         for data in data:
                             logging.debug("Query type is %s", querytype)
                             if querytype == "file":
-                                f = csv.writer(
+                                csv_file = csv.writer(
                                     open(
                                         dv_file,
                                         "a+",
@@ -281,60 +283,60 @@ def export_from_dv():
                                     tmp = []
                                     for key, value in data.items():
                                         tmp.append(key)
-                                    f.writerow(tmp)
+                                    csv_file.writerow(tmp)
                                     firstrun = False
                                 tmp = []
                                 for key, value in data.items():
                                     tmp.append(value)
-                                f.writerow(tmp)
+                                csv_file.writerow(tmp)
 
                             elif querytype == "ip":
-                                f = csv.writer(
+                                csv_file = csv.writer(
                                     open(dv_ip, "a+", newline="", encoding="utf-8")
                                 )
                                 if firstrun:
                                     tmp = []
                                     for key, value in data.items():
                                         tmp.append(key)
-                                    f.writerow(tmp)
+                                    csv_file.writerow(tmp)
                                     firstrun = False
                                 tmp = []
                                 for key, value in data.items():
                                     tmp.append(value)
-                                f.writerow(tmp)
+                                csv_file.writerow(tmp)
 
                             elif querytype == "url":
-                                f = csv.writer(
+                                csv_file = csv.writer(
                                     open(dv_url, "a+", newline="", encoding="utf-8")
                                 )
                                 if firstrun:
                                     tmp = []
                                     for key, value in data.items():
                                         tmp.append(key)
-                                    f.writerow(tmp)
+                                    csv_file.writerow(tmp)
                                     firstrun = False
                                 tmp = []
                                 for key, value in data.items():
                                     tmp.append(value)
-                                f.writerow(tmp)
+                                csv_file.writerow(tmp)
 
                             elif querytype == "dns":
-                                f = csv.writer(
+                                csv_file = csv.writer(
                                     open(dv_dns, "a+", newline="", encoding="utf-8")
                                 )
                                 if firstrun:
                                     tmp = []
                                     for key, value in data.items():
                                         tmp.append(key)
-                                    f.writerow(tmp)
+                                    csv_file.writerow(tmp)
                                     firstrun = False
                                 tmp = []
                                 for key, value in data.items():
                                     tmp.append(value)
-                                f.writerow(tmp)
+                                csv_file.writerow(tmp)
 
                             elif querytype == "process":
-                                f = csv.writer(
+                                csv_file = csv.writer(
                                     open(
                                         dv_process,
                                         "a+",
@@ -346,15 +348,15 @@ def export_from_dv():
                                     tmp = []
                                     for key, value in data.items():
                                         tmp.append(key)
-                                    f.writerow(tmp)
+                                    csv_file.writerow(tmp)
                                     firstrun = False
                                 tmp = []
                                 for key, value in data.items():
                                     tmp.append(value)
-                                f.writerow(tmp)
+                                csv_file.writerow(tmp)
 
                             elif querytype == "registry":
-                                f = csv.writer(
+                                csv_file = csv.writer(
                                     open(
                                         dv_registry,
                                         "a+",
@@ -366,15 +368,15 @@ def export_from_dv():
                                     tmp = []
                                     for key, value in data.items():
                                         tmp.append(key)
-                                    f.writerow(tmp)
+                                    csv_file.writerow(tmp)
                                     firstrun = False
                                 tmp = []
                                 for key, value in data.items():
                                     tmp.append(value)
-                                f.writerow(tmp)
+                                csv_file.writerow(tmp)
 
                             elif querytype == "scheduled_task":
-                                f = csv.writer(
+                                csv_file = csv.writer(
                                     open(
                                         dv_scheduled_task,
                                         "a+",
@@ -386,12 +388,12 @@ def export_from_dv():
                                     tmp = []
                                     for key, value in data.items():
                                         tmp.append(key)
-                                    f.writerow(tmp)
+                                    csv_file.writerow(tmp)
                                     firstrun = False
                                 tmp = []
                                 for key, value in data.items():
                                     tmp.append(value)
-                                f.writerow(tmp)
+                                csv_file.writerow(tmp)
                     if cursor:
                         paramsnext = f"/web/api/{API_VERSION}/dv/events/{querytype}?cursor={cursor}&queryId={dv_query_id}&{QUERY_LIMITS}"
                         url = hostname + paramsnext
@@ -400,7 +402,7 @@ def export_from_dv():
                         logger.debug("No cursor found, setting URL to None")
                         url = None
 
-    async def run(hostname, dv_query_id, apitoken, proxy):
+    async def run(hostname, dv_query_id, proxy):
         async with aiohttp.ClientSession() as session:
             for query in dv_query_id:
                 firstrun = False
@@ -461,7 +463,7 @@ def export_from_dv():
         dv_query_id = dv_query_id.split(",")
         if platform.system() == "Windows":
             asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
-        asyncio.run(run(HOSTNAME.get(), dv_query_id, API_TOKEN.get(), PROXY.get()))
+        asyncio.run(run(HOSTNAME.get(), dv_query_id, PROXY.get()))
         xlsx_filename = "-"
         xlsx_filename = f"DV_Export_{xlsx_filename.join(dv_query_id)}.xlsx"
         workbook = Workbook(xlsx_filename)
@@ -475,30 +477,30 @@ def export_from_dv():
             dv_scheduled_task,
         ]
         for csvfile in csvs:
-            worksheet = workbook.add_worksheet(csvfile.split(".")[0])
+            worksheet = workbook.add_worksheet(csvfile.split(".", maxsplit=-1)[0])
             if os.path.isfile(csvfile):
-                with open(csvfile, "r", encoding="utf8") as f:
+                with open(csvfile, "r", encoding="utf8") as file:
                     logger.debug("Reading %s and writing to %s", csvfile, workbook)
-                    reader = csv.reader(f)
-                    for r, row in enumerate(reader):
-                        for c, col in enumerate(row):
-                            worksheet.write(r, c, col)
+                    reader = csv.reader(file)
+                    for r_idx, row in enumerate(reader):
+                        for c_idx, col in enumerate(row):
+                            worksheet.write(r_idx, c_idx, col)
                 logger.debug("Deleting %s", csvfile)
                 os.remove(csvfile)
         workbook.close()
         logger.info("Done! Created the file %s\n", xlsx_filename)
     else:
-        logger.error("Please enter a valid DV Query ID and try again.", dv_query_id)
+        logger.error("Please enter a valid DV Query ID and try again.")
 
 
-def export_activity_log(searchOnly):
+def export_activity_log(search_only):
     """Function to search for Activity events by date range or export Activity events"""
-    st = ScrolledText.ScrolledText(
+    scroll_text = ScrolledText.ScrolledText(
         master=EXPORT_ACTIVITY_LOG_FRAME, state="disabled", height=10
     )
-    st.configure(font=ST_FONT)
-    st.grid(row=13, column=0, pady=10)
-    text_handler = TextHandler(st)
+    scroll_text.configure(font=ST_FONT)
+    scroll_text.grid(row=13, column=0, pady=10)
+    text_handler = TextHandler(scroll_text)
     logging.basicConfig(
         filename=LOG_NAME,
         level=LOG_LEVEL,
@@ -508,9 +510,13 @@ def export_activity_log(searchOnly):
     logger.addHandler(text_handler)
 
     os.environ["TZ"] = "UTC"
-    p = "%Y-%m-%d"
-    fromdate_epoch = str(int(time.mktime(time.strptime(date_from.get(), p)))) + "000"
-    todate_epoch = str(int(time.mktime(time.strptime(date_to.get(), p)))) + "000"
+    date_format = "%Y-%m-%d"
+    fromdate_epoch = (
+        str(int(time.mktime(time.strptime(date_from.get(), date_format)))) + "000"
+    )
+    todate_epoch = (
+        str(int(time.mktime(time.strptime(date_to.get(), date_format)))) + "000"
+    )
     logger.debug(
         "Input FROM Date: %s Input TO Date: %s", date_from.get(), date_to.get()
     )
@@ -524,8 +530,8 @@ def export_activity_log(searchOnly):
             HOSTNAME.get()
             + f"/web/api/{API_VERSION}/activities?{QUERY_LIMITS}&createdAt__between={fromdate_epoch}-{todate_epoch}&countOnly=false&includeHidden=false"
         )
-        logger.debug("Search only state: %s", searchOnly)
-        if searchOnly:
+        logger.debug("Search only state: %s", search_only)
+        if search_only:
             logger.info("Starting search for '%s'", string_search_entry.get())
             while url:
                 response = requests.get(
@@ -535,7 +541,7 @@ def export_activity_log(searchOnly):
                     verify=USE_SSL.get(),
                 )
                 logger.debug(
-                    "Making API Call with the following:\nURL: %s\tHeaders: %s\tProxy: %s\tUse SSL: %s",
+                    "Calling API with the following:\nURL: %s\tHeaders: %s\tProxy: %s\tUse SSL: %s",
                     url,
                     headers,
                     PROXY.get(),
@@ -586,7 +592,7 @@ def export_activity_log(searchOnly):
             datestamp = datetime.datetime.now().strftime("%Y-%m-%d_%f")
             csv_filename = f"Activity_Log_Export_{datestamp}.csv"
             logger.info("Creating and opening %s", csv_filename)
-            f = csv.writer(
+            csv_file = csv.writer(
                 open(
                     csv_filename,
                     "a+",
@@ -603,7 +609,7 @@ def export_activity_log(searchOnly):
                     verify=USE_SSL.get(),
                 )
                 logger.debug(
-                    "Making API Call with the following:\nURL: %s\tHeaders: %s\tProxy: %s\tUse SSL: %s",
+                    "Calling API with the following:\nURL: %s\tHeaders: %s\tProxy: %s\tUse SSL: %s",
                     url,
                     headers,
                     PROXY.get(),
@@ -626,7 +632,7 @@ def export_activity_log(searchOnly):
                             for key, value in data[0].items():
                                 tmp.append(key)
                             logger.debug("Writing column headers on first run.")
-                            f.writerow(tmp)
+                            csv_file.writerow(tmp)
                             logger.debug(
                                 "First run through the data set complete, setting firstrun to False"
                             )
@@ -641,7 +647,7 @@ def export_activity_log(searchOnly):
                                 item["primaryDescription"],
                                 item["secondaryDescription"],
                             )
-                            f.writerow(tmp)
+                            csv_file.writerow(tmp)
                     if cursor:
                         paramsnext = f"/web/api/{API_VERSION}/activities?{QUERY_LIMITS}&createdAt__between={fromdate_epoch}-{todate_epoch}&countOnly=false&cursor={cursor}&includeHidden=false"
                         url = HOSTNAME.get() + paramsnext
@@ -654,14 +660,14 @@ def export_activity_log(searchOnly):
         logger.error("You must state a FROM date and a TO date")
 
 
-def upgrade_from_csv(justPackages):
+def upgrade_from_csv(just_packages):
     """Function to upgrade Agents via API"""
-    st = ScrolledText.ScrolledText(
+    scroll_text = ScrolledText.ScrolledText(
         master=UPGRADE_FROM_CSV_FRAME, state="disabled", height=10
     )
-    st.configure(font=ST_FONT)
-    st.grid(row=13, column=0, pady=10)
-    text_handler = TextHandler(st)
+    scroll_text.configure(font=ST_FONT)
+    scroll_text.grid(row=13, column=0, pady=10)
+    text_handler = TextHandler(scroll_text)
     logging.basicConfig(
         filename=LOG_NAME,
         level=LOG_LEVEL,
@@ -673,12 +679,12 @@ def upgrade_from_csv(justPackages):
     datestamp = datetime.datetime.now().strftime("%Y-%m-%d_%f")
     csv_filename = f"Available_Packages_List_{datestamp}.csv"
 
-    logger.debug("Just packages set to: %s", justPackages)
-    if justPackages:
+    logger.debug("Just packages set to: %s", just_packages)
+    if just_packages:
         params = f"/web/api/{API_VERSION}/update/agent/packages?sortBy=updatedAt&sortOrder=desc&countOnly=false&{QUERY_LIMITS}"
         url = HOSTNAME.get() + params
-        f = csv.writer(open(csv_filename, "a+", newline="", encoding="utf-8"))
-        f.writerow(
+        csv_file = csv.writer(open(csv_filename, "a+", newline="", encoding="utf-8"))
+        csv_file.writerow(
             [
                 "Name",
                 "ID",
@@ -700,7 +706,7 @@ def upgrade_from_csv(justPackages):
                 verify=USE_SSL.get(),
             )
             logger.debug(
-                "Making API Call with the following:\nURL: %s\tHeaders: %s\tProxy: %s\tUse SSL: %s",
+                "Calling API with the following:\nURL: %s\tHeaders: %s\tProxy: %s\tUse SSL: %s",
                 url,
                 headers,
                 PROXY.get(),
@@ -718,7 +724,7 @@ def upgrade_from_csv(justPackages):
                 data = data["data"]
                 if data:
                     for data in data:
-                        f.writerow(
+                        csv_file.writerow(
                             [
                                 [data["fileName"]],
                                 data["id"],
@@ -740,7 +746,7 @@ def upgrade_from_csv(justPackages):
                     url = None
         logger.info("SentinelOne agent packages list written to: %s", csv_filename)
     else:
-        with open(INPUT_FILE.get()) as csv_file:
+        with open(INPUT_FILE.get(), encoding="utf-8") as csv_file:
             logger.debug("Reading CSV: %s", INPUT_FILE.get())
             csv_reader = csv.reader(csv_file, delimiter=",")
             line_count = 0
@@ -766,7 +772,7 @@ def upgrade_from_csv(justPackages):
                     verify=USE_SSL.get(),
                 )
                 logger.debug(
-                    "Making API Call with the following:\nURL: %s\tHeaders: %s\tData: %s\tProxy: %s\tUse SSL: %s",
+                    "Calling API with the following:\nURL: %s\tHeaders: %s\tData: %s\tProxy: %s\tUse SSL: %s",
                     url,
                     headers,
                     json.dumps(body),
@@ -796,14 +802,14 @@ def upgrade_from_csv(justPackages):
                 logger.info("Finished! Processed %d lines.", line_count)
 
 
-def move_agents(justGroups):
+def move_agents(just_groups):
     """Function to move Agents using API"""
-    st = ScrolledText.ScrolledText(
+    scroll_text = ScrolledText.ScrolledText(
         master=MOVE_AGENTS_FRAME, state="disabled", height=10
     )
-    st.configure(font=ST_FONT)
-    st.grid(row=13, column=0, pady=10)
-    text_handler = TextHandler(st)
+    scroll_text.configure(font=ST_FONT)
+    scroll_text.grid(row=13, column=0, pady=10)
+    text_handler = TextHandler(scroll_text)
     logging.basicConfig(
         filename=LOG_NAME,
         level=LOG_LEVEL,
@@ -812,13 +818,13 @@ def move_agents(justGroups):
     logger = logging.getLogger()
     logger.addHandler(text_handler)
 
-    if justGroups:
-        logger.debug("Just move agents to groups: %s", justGroups)
+    if just_groups:
+        logger.debug("Just move agents to groups: %s", just_groups)
         params = f"/web/api/{API_VERSION}/groups?isDefault=false&limit=200&type=static&countOnly=false"
         url = HOSTNAME.get() + params
         csv_filename = "Group_To_ID_Map.csv"
-        f = csv.writer(open(csv_filename, "a+", newline="", encoding="utf-8"))
-        f.writerow(["Name", "ID", "Site ID", "Created By"])
+        csv_file = csv.writer(open(csv_filename, "a+", newline="", encoding="utf-8"))
+        csv_file.writerow(["Name", "ID", "Site ID", "Created By"])
         while url:
             response = requests.get(
                 url,
@@ -827,7 +833,7 @@ def move_agents(justGroups):
                 verify=USE_SSL.get(),
             )
             logger.debug(
-                "Making API Call with the following:\nURL: %s\tHeaders: %s\tProxy: %s\tUse SSL: %s",
+                "Calling API with the following:\nURL: %s\tHeaders: %s\tProxy: %s\tUse SSL: %s",
                 url,
                 headers,
                 PROXY.get(),
@@ -845,7 +851,7 @@ def move_agents(justGroups):
                 data = data["data"]
                 if data:
                     for data in data:
-                        f.writerow(
+                        csv_file.writerow(
                             [
                                 [data["name"]],
                                 data["id"],
@@ -862,7 +868,7 @@ def move_agents(justGroups):
                     url = None
         logger.info("Added group mapping to the file %s", csv_filename)
     else:
-        with open(INPUT_FILE.get()) as csv_file:
+        with open(INPUT_FILE.get(), encoding="utf-8") as csv_file:
             csv_reader = csv.reader(csv_file, delimiter=",")
             line_count = 0
             for row in csv_reader:
@@ -883,7 +889,7 @@ def move_agents(justGroups):
                     verify=USE_SSL.get(),
                 )
                 logger.debug(
-                    "Making API Call with the following:\nURL: %s\tHeaders: %s\tData: %s\tProxy: %s\tUse SSL: %s",
+                    "Calling API with the following:\nURL: %s\tHeaders: %s\tData: %s\tProxy: %s\tUse SSL: %s",
                     url,
                     headers,
                     json.dumps(body),
@@ -938,12 +944,12 @@ def move_agents(justGroups):
 
 def assign_customer_id():
     """Function to add a Customer Identifier to one or more Agents via API"""
-    st = ScrolledText.ScrolledText(
+    scroll_text = ScrolledText.ScrolledText(
         master=ASSIGN_CUSTOMER_ID_FRAME, state="disabled", height=10
     )
-    st.configure(font=ST_FONT)
-    st.grid(row=13, column=0, pady=10)
-    text_handler = TextHandler(st)
+    scroll_text.configure(font=ST_FONT)
+    scroll_text.grid(row=13, column=0, pady=10)
+    text_handler = TextHandler(scroll_text)
     logging.basicConfig(
         filename=LOG_NAME,
         level=LOG_LEVEL,
@@ -952,7 +958,7 @@ def assign_customer_id():
     logger = logging.getLogger()
     logger.addHandler(text_handler)
 
-    with open(INPUT_FILE.get()) as csv_file:
+    with open(INPUT_FILE.get(), encoding="utf-8") as csv_file:
         logger.debug("Reading CSV: %s", INPUT_FILE.get())
         csv_reader = csv.reader(csv_file, delimiter=",")
         line_count = 0
@@ -974,7 +980,7 @@ def assign_customer_id():
                 verify=USE_SSL.get(),
             )
             logger.debug(
-                "Making API Call with the following:\nURL: %s\tHeaders: %s\tProxy: %s\tUse SSL: %s",
+                "Calling API with the following:\nURL: %s\tHeaders: %s\tProxy: %s\tUse SSL: %s",
                 url,
                 headers,
                 PROXY.get(),
@@ -988,8 +994,8 @@ def assign_customer_id():
                     str(response.text),
                 )
             else:
-                r = response.json()
-                affected_num_of_endpoints = r["data"]["affected"]
+                json_response = response.json()
+                affected_num_of_endpoints = json_response["data"]["affected"]
                 if affected_num_of_endpoints < 1:
                     logger.info("No endpoint matched the name %s", row[0])
                 elif affected_num_of_endpoints > 1:
@@ -1009,12 +1015,12 @@ def assign_customer_id():
 
 def export_all_agents():
     """Function to export a list of all Agents and details to CSV"""
-    st = ScrolledText.ScrolledText(
+    scroll_text = ScrolledText.ScrolledText(
         master=EXPORT_ENDPOINTS_FRAME, state="disabled", height=10
     )
-    st.configure(font=ST_FONT)
-    st.grid(row=13, column=0, columnspan=2, pady=10)
-    text_handler = TextHandler(st)
+    scroll_text.configure(font=ST_FONT)
+    scroll_text.grid(row=13, column=0, columnspan=2, pady=10)
+    text_handler = TextHandler(scroll_text)
     logging.basicConfig(
         filename=LOG_NAME,
         level=LOG_LEVEL,
@@ -1026,7 +1032,7 @@ def export_all_agents():
     datestamp = datetime.datetime.now().strftime("%Y-%m-%d_%f")
     logger.debug("User selected %s file type", endpoint_output_type.get())
     output_file_name = f"Export_Endpoints_{datestamp}"
-    csv_file = output_file_name + ".csv"
+    csv_filename = output_file_name + ".csv"
     xlsx_file = output_file_name + ".xlsx"
 
     firstrun = True
@@ -1044,7 +1050,7 @@ def export_all_agents():
             verify=USE_SSL.get(),
         )
         logger.debug(
-            "Making API Call with the following:\nURL: %s\tHeaders: %s\tProxy: %s\tUse SSL: %s",
+            "Calling API with the following:\nURL: %s\tHeaders: %s\tProxy: %s\tUse SSL: %s",
             url,
             headers,
             PROXY.get(),
@@ -1066,9 +1072,11 @@ def export_all_agents():
             logger.debug(
                 "%s total endpoints in data. Opening %s to start writing",
                 total_endpoints,
-                csv_file,
+                csv_filename,
             )
-            f = csv.writer(open(csv_file, "a+", newline="", encoding="utf-8"))
+            csv_file = csv.writer(
+                open(csv_filename, "a+", newline="", encoding="utf-8")
+            )
             if firstrun:
                 tmp = []
                 for key, value in data[0].items():
@@ -1077,7 +1085,7 @@ def export_all_agents():
                     "Writing column headers to first row: %s",
                     tmp,
                 )
-                f.writerow(tmp)
+                csv_file.writerow(tmp)
                 logger.debug("First run complete, setting firstrun to False")
                 firstrun = False
             for item in data:
@@ -1088,7 +1096,7 @@ def export_all_agents():
                     "Writing data to new row: %s",
                     tmp,
                 )
-                f.writerow(tmp)
+                csv_file.writerow(tmp)
 
             if cursor:
                 paramsnext = f"/web/api/{API_VERSION}/agents?{QUERY_LIMITS}&sortBy=computerName&sortOrder=asc&cursor={cursor}"
@@ -1103,17 +1111,17 @@ def export_all_agents():
         workbook = Workbook(xlsx_file)
         logger.debug("Adding new worksheet: 'Endpoints'")
         worksheet = workbook.add_worksheet("Endpoints")
-        if os.path.isfile(csv_file):
-            with open(csv_file, "r", encoding="utf8") as f:
-                logger.info("Reading %s and writing to %s", csv_file, xlsx_file)
-                reader = csv.reader(f)
-                for r, row in enumerate(reader):
-                    for c, col in enumerate(row):
-                        worksheet.write(r, c, col)
-            logger.debug("Deleting %s", csv_file)
-            os.remove(csv_file)
+        if os.path.isfile(csv_filename):
+            with open(csv_filename, "r", encoding="utf8") as csv_file:
+                logger.info("Reading %s and writing to %s", csv_filename, xlsx_file)
+                reader = csv.reader(csv_file)
+                for r_idx, row in enumerate(reader):
+                    for c_idx, col in enumerate(row):
+                        worksheet.write(r_idx, c_idx, col)
+            logger.debug("Deleting %s", csv_filename)
+            os.remove(csv_filename)
         else:
-            logger.error("%s not found.", csv_file)
+            logger.error("%s not found.", csv_filename)
         logger.debug("Closing XLSX")
         workbook.close()
 
@@ -1124,12 +1132,12 @@ def export_all_agents():
 
 def decommission_agents():
     """Function to decommission specified agents via API"""
-    st = ScrolledText.ScrolledText(
+    scroll_text = ScrolledText.ScrolledText(
         master=DECOMMISSION_AGENTS_FRAME, state="disabled", height=10
     )
-    st.configure(font=ST_FONT)
-    st.grid(row=13, column=0, pady=10)
-    text_handler = TextHandler(st)
+    scroll_text.configure(font=ST_FONT)
+    scroll_text.grid(row=13, column=0, pady=10)
+    text_handler = TextHandler(scroll_text)
     logging.basicConfig(
         filename=LOG_NAME,
         level=LOG_LEVEL,
@@ -1138,7 +1146,7 @@ def decommission_agents():
     logger = logging.getLogger()
     logger.addHandler(text_handler)
 
-    with open(INPUT_FILE.get()) as csv_file:
+    with open(INPUT_FILE.get(), encoding="utf-8") as csv_file:
         logger.debug("Reading CSV: %s", INPUT_FILE.get())
         csv_reader = csv.reader(csv_file, delimiter=",")
         line_count = 0
@@ -1156,7 +1164,7 @@ def decommission_agents():
                 verify=USE_SSL.get(),
             )
             logger.debug(
-                "Making API Call with the following:\nURL: %s\tHeaders: %s\tProxy: %s\tUse SSL: %s",
+                "Calling API with the following:\nURL: %s\tHeaders: %s\tProxy: %s\tUse SSL: %s",
                 url,
                 headers,
                 PROXY.get(),
@@ -1170,8 +1178,8 @@ def decommission_agents():
                     str(response.text),
                 )
             else:
-                r = response.json()
-                totalitems = r["pagination"]["totalItems"]
+                json_response = response.json()
+                totalitems = json_response["pagination"]["totalItems"]
                 logger.debug("Total items returned: %s", totalitems)
                 if totalitems < 1:
                     logger.info(
@@ -1179,9 +1187,9 @@ def decommission_agents():
                         row[0],
                     )
                 else:
-                    r = r["data"]
+                    json_response = json_response["data"]
                     uuidslist = []
-                    for item in r:
+                    for item in json_response:
                         uuidslist.append(item["id"])
                         logger.info(
                             "Found ID %s! Adding it to be decommissioned", item["id"]
@@ -1199,7 +1207,7 @@ def decommission_agents():
                         verify=USE_SSL.get(),
                     )
                     logger.debug(
-                        "Making API Call with the following:\nURL: %s\tHeaders: %s\tProxy: %s\tUse SSL: %s",
+                        "Calling API with the following:\nURL: %s\tHeaders: %s\tProxy: %s\tUse SSL: %s",
                         url,
                         headers,
                         PROXY.get(),
@@ -1213,8 +1221,8 @@ def decommission_agents():
                             str(response.text),
                         )
                     else:
-                        r = response.json()
-                        affected_num_of_endpoints = r["data"]["affected"]
+                        json_response = response.json()
+                        affected_num_of_endpoints = json_response["data"]["affected"]
                         if affected_num_of_endpoints < 1:
                             logger.info("No endpoint matched the name %s", row[0])
                         elif affected_num_of_endpoints > 1:
@@ -1234,12 +1242,12 @@ def decommission_agents():
 
 def export_exclusions():
     """Function to export Exclusions to CSV"""
-    st = ScrolledText.ScrolledText(
+    scroll_text = ScrolledText.ScrolledText(
         master=EXPORT_EXCLUSIONS_FRAME, state="disabled", height=10
     )
-    st.configure(font=ST_FONT)
-    st.grid(row=13, column=0, pady=10)
-    text_handler = TextHandler(st)
+    scroll_text.configure(font=ST_FONT)
+    scroll_text.grid(row=13, column=0, pady=10)
+    text_handler = TextHandler(scroll_text)
     logging.basicConfig(
         filename=LOG_NAME,
         level=LOG_LEVEL,
@@ -1248,7 +1256,7 @@ def export_exclusions():
     logger = logging.getLogger()
     logger.addHandler(text_handler)
 
-    async def getAccounts(session):
+    async def get_accounts(session):
         logger.info("Getting accounts data")
         params = (
             f"/web/api/{API_VERSION}/accounts?{QUERY_LIMITS}"
@@ -1258,7 +1266,7 @@ def export_exclusions():
         while url:
             async with session.get(url, headers=headers, proxy=PROXY.get()) as response:
                 logger.debug(
-                    "Making API Call with the following:\nURL: %s\tHeaders: %s\tProxy: %s\tUse SSL: %s",
+                    "Calling API with the following:\nURL: %s\tHeaders: %s\tProxy: %s\tUse SSL: %s",
                     url,
                     headers,
                     PROXY.get(),
@@ -1288,7 +1296,7 @@ def export_exclusions():
                         logger.debug("No cursor found, setting URL to None")
                         url = None
 
-    async def getSites(session):
+    async def get_sites(session):
         logger.info("Getting sites data")
         params = (
             f"/web/api/{API_VERSION}/sites?{QUERY_LIMITS}&countOnly=false&tenant=true"
@@ -1297,7 +1305,7 @@ def export_exclusions():
         while url:
             async with session.get(url, headers=headers, proxy=PROXY.get()) as response:
                 logger.debug(
-                    "Making API Call with the following:\nURL: %s\tHeaders: %s\tProxy: %s\tUse SSL: %s",
+                    "Calling API with the following:\nURL: %s\tHeaders: %s\tProxy: %s\tUse SSL: %s",
                     url,
                     headers,
                     PROXY.get(),
@@ -1326,7 +1334,7 @@ def export_exclusions():
                         logger.debug("No cursor found, setting URL to None")
                         url = None
 
-    async def getGroups(session):
+    async def get_groups(session):
         logger.info("Getting groups data")
         params = (
             f"/web/api/{API_VERSION}/groups?{QUERY_LIMITS}&countOnly=false&tenant=true"
@@ -1335,7 +1343,7 @@ def export_exclusions():
         while url:
             async with session.get(url, headers=headers, proxy=PROXY.get()) as response:
                 logger.debug(
-                    "Making API Call with the following:\nURL: %s\tHeaders: %s\tProxy: %s\tUse SSL: %s",
+                    "Calling API with the following:\nURL: %s\tHeaders: %s\tProxy: %s\tUse SSL: %s",
                     url,
                     headers,
                     PROXY.get(),
@@ -1376,7 +1384,7 @@ def export_exclusions():
         while url:
             async with session.get(url, headers=headers, proxy=PROXY.get()) as response:
                 logger.debug(
-                    "Making API Call with the following:\nURL: %s\tHeaders: %s\tProxy: %s\tUse SSL: %s",
+                    "Calling API with the following:\nURL: %s\tHeaders: %s\tProxy: %s\tUse SSL: %s",
                     url,
                     headers,
                     PROXY.get(),
@@ -1397,7 +1405,7 @@ def export_exclusions():
                     if data:
                         for data in data:
                             if querytype == "path":
-                                f = csv.writer(
+                                csv_file = csv.writer(
                                     open(
                                         "exceptions_path.csv",
                                         "a+",
@@ -1410,16 +1418,16 @@ def export_exclusions():
                                     tmp.append("Scope")
                                     for key, value in data.items():
                                         tmp.append(key)
-                                    f.writerow(tmp)
+                                    csv_file.writerow(tmp)
                                     firstrunpath = False
                                 tmp = []
                                 tmp.append(scope)
                                 for key, value in data.items():
                                     tmp.append(value)
-                                f.writerow(tmp)
+                                csv_file.writerow(tmp)
 
                             elif querytype == "certificate":
-                                f = csv.writer(
+                                csv_file = csv.writer(
                                     open(
                                         "exceptions_certificate.csv",
                                         "a+",
@@ -1432,16 +1440,16 @@ def export_exclusions():
                                     tmp.append("Scope")
                                     for key, value in data.items():
                                         tmp.append(key)
-                                    f.writerow(tmp)
+                                    csv_file.writerow(tmp)
                                     firstruncert = False
                                 tmp = []
                                 tmp.append(scope)
                                 for key, value in data.items():
                                     tmp.append(value)
-                                f.writerow(tmp)
+                                csv_file.writerow(tmp)
 
                             elif querytype == "browser":
-                                f = csv.writer(
+                                csv_file = csv.writer(
                                     open(
                                         "exceptions_browser.csv",
                                         "a+",
@@ -1454,16 +1462,16 @@ def export_exclusions():
                                     tmp.append("Scope")
                                     for key, value in data.items():
                                         tmp.append(key)
-                                    f.writerow(tmp)
+                                    csv_file.writerow(tmp)
                                     firstrunbrowser = False
                                 tmp = []
                                 tmp.append(scope)
                                 for key, value in data.items():
                                     tmp.append(value)
-                                f.writerow(tmp)
+                                csv_file.writerow(tmp)
 
                             elif querytype == "file_type":
-                                f = csv.writer(
+                                csv_file = csv.writer(
                                     open(
                                         "exceptions_file_type.csv",
                                         "a+",
@@ -1476,16 +1484,16 @@ def export_exclusions():
                                     tmp.append("Scope")
                                     for key, value in data.items():
                                         tmp.append(key)
-                                    f.writerow(tmp)
+                                    csv_file.writerow(tmp)
                                     firstrunfile = False
                                 tmp = []
                                 tmp.append(scope)
                                 for key, value in data.items():
                                     tmp.append(value)
-                                f.writerow(tmp)
+                                csv_file.writerow(tmp)
 
                             elif querytype == "white_hash":
-                                f = csv.writer(
+                                csv_file = csv.writer(
                                     open(
                                         "exceptions_white_hash.csv",
                                         "a+",
@@ -1498,13 +1506,13 @@ def export_exclusions():
                                     tmp.append("Scope")
                                     for key, value in data.items():
                                         tmp.append(key)
-                                    f.writerow(tmp)
+                                    csv_file.writerow(tmp)
                                     firstrunhash = False
                                 tmp = []
                                 tmp.append(scope)
                                 for key, value in data.items():
                                     tmp.append(value)
-                                f.writerow(tmp)
+                                csv_file.writerow(tmp)
 
                     if cursor:
                         paramsnext = f"/web/api/{API_VERSION}/exclusions?{QUERY_LIMITS}&type={querytype}&countOnly=false&cursor={cursor}"
@@ -1698,19 +1706,19 @@ def export_exclusions():
     async def runAccounts():
         async with aiohttp.ClientSession() as session:
             logger.debug("Running through accounts")
-            accounts = asyncio.create_task(getAccounts(session))
+            accounts = asyncio.create_task(get_accounts(session))
             await accounts
 
     async def runSites():
         async with aiohttp.ClientSession() as session:
             logger.debug("Running through sites")
-            sites = asyncio.create_task(getSites(session))
+            sites = asyncio.create_task(get_sites(session))
             await sites
 
     async def runGroups():
         async with aiohttp.ClientSession() as session:
             logger.debug("Running through groups")
-            groups = asyncio.create_task(getGroups(session))
+            groups = asyncio.create_task(get_groups(session))
             await groups
 
     def getScope():
@@ -1719,10 +1727,10 @@ def export_exclusions():
         r = requests.get(
             url,
             headers=headers,
-            proxies={"http": PROXY},
+            proxies={"http": PROXY.get(), "https": PROXY.get()},
         )
         logger.debug(
-            "Making API Call with the following:\nURL: %s\tHeaders: %s\tProxy: %s\tUse SSL: %s",
+            "Calling API with the following:\nURL: %s\tHeaders: %s\tProxy: %s\tUse SSL: %s",
             url,
             headers,
             PROXY.get(),
@@ -1812,12 +1820,12 @@ def export_exclusions():
 
 def export_endpoint_tags():
     """Function to export Endpoint Tags from Console"""
-    st = ScrolledText.ScrolledText(
+    scroll_text = ScrolledText.ScrolledText(
         master=EXPORT_ENDPOINT_TAGS_FRAME, state="disabled", height=10
     )
-    st.configure(font=ST_FONT)
-    st.grid(row=13, column=0, pady=10)
-    text_handler = TextHandler(st)
+    scroll_text.configure(font=ST_FONT)
+    scroll_text.grid(row=13, column=0, pady=10)
+    text_handler = TextHandler(scroll_text)
     logging.basicConfig(
         filename=LOG_NAME,
         level=LOG_LEVEL,
@@ -1842,7 +1850,7 @@ def export_endpoint_tags():
             verify=USE_SSL.get(),
         )
         logger.debug(
-            "Making API Call with the following:\nURL: %s\tHeaders: %s\tProxy: %s\tUse SSL: %s",
+            "Calling API with the following:\nURL: %s\tHeaders: %s\tProxy: %s\tUse SSL: %s",
             url,
             headers,
             PROXY.get(),
@@ -1890,12 +1898,12 @@ def export_endpoint_tags():
 
 def manage_endpoint_tags():
     """Add or Remove Endpoint Tags from Agents"""
-    st = ScrolledText.ScrolledText(
+    scroll_text = ScrolledText.ScrolledText(
         master=MANAGE_ENDPOINT_TAGS_FRAME, state="disabled", height=10
     )
-    st.configure(font=ST_FONT)
-    st.grid(row=13, column=0, columnspan=2, pady=10)
-    text_handler = TextHandler(st)
+    scroll_text.configure(font=ST_FONT)
+    scroll_text.grid(row=13, column=0, columnspan=2, pady=10)
+    text_handler = TextHandler(scroll_text)
     logging.basicConfig(
         filename=LOG_NAME,
         level=LOG_LEVEL,
@@ -1928,7 +1936,7 @@ def manage_endpoint_tags():
                 ],
             }
             logger.debug(
-                "Making API Call with the following:\nURL: %s\tData: %s\tHeaders: %s\tProxy: %s\tUse SSL: %s",
+                "Calling API with the following:\nURL: %s\tData: %s\tHeaders: %s\tProxy: %s\tUse SSL: %s",
                 url,
                 json.dumps(body),
                 headers,
@@ -1965,12 +1973,12 @@ def manage_endpoint_tags():
 
 def export_local_config():
     """Export Agent Local Config"""
-    st = ScrolledText.ScrolledText(
+    scroll_text = ScrolledText.ScrolledText(
         master=EXPORT_LOCAL_CONFIG_FRAME, state="disabled", height=10
     )
-    st.configure(font=ST_FONT)
-    st.grid(row=13, column=0, pady=10)
-    text_handler = TextHandler(st)
+    scroll_text.configure(font=ST_FONT)
+    scroll_text.grid(row=13, column=0, pady=10)
+    text_handler = TextHandler(scroll_text)
     logging.basicConfig(
         filename=LOG_NAME,
         level=LOG_LEVEL,
@@ -2000,7 +2008,7 @@ def export_local_config():
                 verify=USE_SSL.get(),
             )
             logger.debug(
-                "Making API Call with the following:\nURL: %s\tParams: %s\tHeaders: %s\tProxy: %s\tUse SSL: %s",
+                "Calling API with the following:\nURL: %s\tParams: %s\tHeaders: %s\tProxy: %s\tUse SSL: %s",
                 url,
                 param,
                 headers,
@@ -2038,7 +2046,7 @@ def export_local_config():
                 verify=USE_SSL.get(),
             )
             logger.debug(
-                "Making API Call with the following:\nURL: %s\tParams: %s\tHeaders: %s\tProxy: %s\tUse SSL: %s",
+                "Calling API with the following:\nURL: %s\tParams: %s\tHeaders: %s\tProxy: %s\tUse SSL: %s",
                 url,
                 param,
                 headers,
@@ -2072,12 +2080,12 @@ def export_local_config():
 
 def export_users():
     """Function to handle getting User Details and writing to CSV or XLSX"""
-    st = ScrolledText.ScrolledText(
+    scroll_text = ScrolledText.ScrolledText(
         master=EXPORT_USERS_FRAME, state="disabled", height=10
     )
-    st.configure(font=ST_FONT)
-    st.grid(row=13, column=0, columnspan=2, pady=10)
-    text_handler = TextHandler(st)
+    scroll_text.configure(font=ST_FONT)
+    scroll_text.grid(row=13, column=0, columnspan=2, pady=10)
+    text_handler = TextHandler(scroll_text)
     logging.basicConfig(
         filename=LOG_NAME,
         level=LOG_LEVEL,
@@ -2132,7 +2140,7 @@ def export_users():
             verify=USE_SSL.get(),
         )
         logger.debug(
-            "Making API Call with the following:\nURL: %s\tHeaders: %s\tProxy: %s\tUse SSL: %s",
+            "Calling API with the following:\nURL: %s\tHeaders: %s\tProxy: %s\tUse SSL: %s",
             url,
             headers,
             PROXY.get(),
@@ -2233,12 +2241,12 @@ def export_users():
 
 def export_ranger():
     """Function to handle exporting Ranger Inventory to CSV"""
-    st = ScrolledText.ScrolledText(
+    scroll_text = ScrolledText.ScrolledText(
         master=EXPORT_RANGER_INV_FRAME, state="disabled", height=10
     )
-    st.configure(font=ST_FONT)
-    st.grid(row=13, column=0, columnspan=2, pady=10)
-    text_handler = TextHandler(st)
+    scroll_text.configure(font=ST_FONT)
+    scroll_text.grid(row=13, column=0, columnspan=2, pady=10)
+    text_handler = TextHandler(scroll_text)
     logging.basicConfig(
         filename=LOG_NAME,
         level=LOG_LEVEL,
@@ -2278,7 +2286,7 @@ def export_ranger():
             url = HOSTNAME.get() + endpoint
             while url:
                 logger.debug(
-                    "Making API Call with the following:\nURL: %s\tHeaders: %s\tProxy: %s\tUse SSL: %s",
+                    "Calling API with the following:\nURL: %s\tHeaders: %s\tProxy: %s\tUse SSL: %s",
                     url,
                     headers,
                     PROXY.get(),
@@ -2337,12 +2345,12 @@ def export_ranger():
 
 def export_account_ids():
     """Function to get all Account IDs for a tenant"""
-    st = ScrolledText.ScrolledText(
+    scroll_text = ScrolledText.ScrolledText(
         master=UPDATE_SYSTEM_CONFIG_FRAME, state="disabled", height=10
     )
-    st.configure(font=ST_FONT)
-    st.grid(row=13, column=0, columnspan=2, pady=10)
-    text_handler = TextHandler(st)
+    scroll_text.configure(font=ST_FONT)
+    scroll_text.grid(row=13, column=0, columnspan=2, pady=10)
+    text_handler = TextHandler(scroll_text)
     logging.basicConfig(
         filename=LOG_NAME,
         level=LOG_LEVEL,
@@ -2357,7 +2365,7 @@ def export_account_ids():
 
     while url:
         logger.debug(
-            "Making API Call with the following:\nURL: %s\tHeaders: %s\tProxy: %s\tUse SSL: %s",
+            "Calling API with the following:\nURL: %s\tHeaders: %s\tProxy: %s\tUse SSL: %s",
             url,
             headers,
             PROXY.get(),
@@ -2418,12 +2426,12 @@ def export_account_ids():
 def bulk_resolve_threats():
     """Function to resolve multiple incidents by threat detail string search or SHA1"""
     # TODO: Test special chars
-    st = ScrolledText.ScrolledText(
+    scroll_text = ScrolledText.ScrolledText(
         master=BULK_RESOLVE_THREATS_FRAME, state="disabled", height=10
     )
-    st.configure(font=ST_FONT)
-    st.grid(row=13, column=0, columnspan=2, pady=10)
-    text_handler = TextHandler(st)
+    scroll_text.configure(font=ST_FONT)
+    scroll_text.grid(row=13, column=0, columnspan=2, pady=10)
+    text_handler = TextHandler(scroll_text)
     logging.basicConfig(
         filename=LOG_NAME,
         level=LOG_LEVEL,
@@ -2542,7 +2550,7 @@ def bulk_resolve_threats():
             verify=USE_SSL.get(),
         )
         logger.debug(
-            "Making API Call with the following:\nURL: %s\tHeaders: %s\tProxy: %s\tUse SSL: %s",
+            "Calling API with the following:\nURL: %s\tHeaders: %s\tProxy: %s\tUse SSL: %s",
             url,
             headers,
             PROXY.get(),
@@ -2582,7 +2590,7 @@ def bulk_resolve_threats():
                 verify=USE_SSL.get(),
             )
             logger.debug(
-                "Making API Call with the following:\nURL: %s\tHeaders: %s\tProxy: %s\tUse SSL: %s",
+                "Calling API with the following:\nURL: %s\tHeaders: %s\tProxy: %s\tUse SSL: %s",
                 url,
                 headers,
                 PROXY.get(),
@@ -2605,7 +2613,7 @@ def bulk_resolve_threats():
                 verify=USE_SSL.get(),
             )
             logger.debug(
-                "Making API Call with the following:\nURL: %s\tHeaders: %s\tProxy: %s\tUse SSL: %s",
+                "Calling API with the following:\nURL: %s\tHeaders: %s\tProxy: %s\tUse SSL: %s",
                 url,
                 headers,
                 PROXY.get(),
@@ -2630,7 +2638,7 @@ def bulk_resolve_threats():
                 verify=USE_SSL.get(),
             )
             logger.debug(
-                "Making API Call with the following:\nURL: %s\tHeaders: %s\tProxy: %s\tUse SSL: %s",
+                "Calling API with the following:\nURL: %s\tHeaders: %s\tProxy: %s\tUse SSL: %s",
                 url,
                 headers,
                 PROXY.get(),
@@ -2662,12 +2670,12 @@ def bulk_resolve_threats():
 
 def update_sys_config():
     """Function to read in a JSON configuration to update Account level system configuration settings."""
-    st = ScrolledText.ScrolledText(
+    scroll_text = ScrolledText.ScrolledText(
         master=UPDATE_SYSTEM_CONFIG_FRAME, state="disabled", height=10
     )
-    st.configure(font=ST_FONT)
-    st.grid(row=13, column=0, columnspan=2, pady=10)
-    text_handler = TextHandler(st)
+    scroll_text.configure(font=ST_FONT)
+    scroll_text.grid(row=13, column=0, columnspan=2, pady=10)
+    text_handler = TextHandler(scroll_text)
     logging.basicConfig(
         filename=LOG_NAME,
         level=LOG_LEVEL,
@@ -2737,7 +2745,7 @@ def update_sys_config():
                     verify=USE_SSL.get(),
                 )
                 logger.debug(
-                    "Making API Call with the following:\nURL: %s\tHeaders: %s\tProxy: %s\tUse SSL: %s",
+                    "Calling API with the following:\nURL: %s\tHeaders: %s\tProxy: %s\tUse SSL: %s",
                     url,
                     headers,
                     PROXY.get(),
