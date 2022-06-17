@@ -25,8 +25,8 @@ The S1 Manager tool is a GUI-based application to assist SentinelOne administrat
 
 ### Download EXE
 To download the latest EXE build:
-- [https://github.com/DylanCS1/s1_manager/releases/download/v2022.1.6/s1_manager-2022.1.6.exe](https://github.com/DylanCS1/s1_manager/releases/download/v2022.1.6/s1_manager-2022.1.6.exe)
-- SHA1: 1F8E05D596DC8FD1180A6DC2B120220AD687C5B9
+- [https://github.com/DylanCS1/s1_manager/releases/download/v2022.1.8/s1_manager-2022.1.8.exe](https://github.com/DylanCS1/s1_manager/releases/download/v2022.1.8/s1_manager-2022.1.8.exe)
+- SHA1: 43671F10D3185BDC625AD72EFCED32C10822793E
 
 To download the pre-2022 release:
 - [https://github.com/DylanCS1/s1_manager/raw/main/.COMPILED/s1_manager-1.0.exe](https://github.com/DylanCS1/s1_manager/raw/main/.COMPILED/s1_manager-1.0.exe)
@@ -169,9 +169,10 @@ Process:
 
 ### Export Endpoints
 
-Export Endpoint details in the SentinelOne console to CSV or XLSX.
-> This can take a very long time, especially if there are more than 10,000 endpoints to export. Instead, it is recommended to export the CSV from the Management Console, as that is much faster and can handle up to 300,000 endpoints.
+Export Endpoint Light-report to CSV and convert to XLSX.
+> This includes up to 300,000 endpoints and associated details.
 
+**Note:** The previous method used by this operation was inefficient and for very large numbers of endpoints could take hours. The new method relies on the Light Report export option added in Rio GA.
 
 
 ### Export Exclusions
