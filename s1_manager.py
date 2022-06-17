@@ -1,12 +1,6 @@
 """ s1_manager.py
     Source: https://github.com/DylanCS1/s1_manager
     License: MIT license - https://github.com/DylanCS1/s1_manager/blob/main/LICENSE.txt
-
-    # TODO: Update readme
-        - new version number
-        - Update Sys Config details
-        - new screenshot
-        - new SHA1
 """
 
 import asyncio
@@ -22,7 +16,6 @@ import tkinter as tk
 import tkinter.filedialog
 import tkinter.scrolledtext as ScrolledText
 from functools import partial
-from multiprocessing.sharedctypes import Value
 from pathlib import Path
 from tkinter import UNDERLINE, ttk
 
@@ -32,7 +25,7 @@ from PIL import Image, ImageTk
 from xlsxwriter.workbook import Workbook
 
 # CONSTS
-__version__ = "2022.1.7"
+__version__ = "2022.1.8"
 API_VERSION = "v2.1"
 DIR_PATH = os.path.dirname(os.path.realpath(__file__))
 QUERY_LIMITS = "limit=1000"
@@ -104,9 +97,7 @@ class TextHandler(logging.Handler):
     Adapted from Moshe Kaplan: https://gist.github.com/moshekaplan/c425f861de7bbf28ef06"""
 
     def __init__(self, text):
-        # run the regular Handler __init__
         logging.Handler.__init__(self)
-        # Store a reference to the Text it will log to
         self.text = text
 
     def emit(self, record):
@@ -116,10 +107,8 @@ class TextHandler(logging.Handler):
             self.text.configure(state="normal")
             self.text.insert(tk.END, msg + "\n")
             self.text.configure(state="disabled")
-            # Autoscroll to the bottom
             self.text.yview(tk.END)
 
-        # This is necessary because we can't modify the Text from other threads
         self.text.after(0, append)
 
 
@@ -214,7 +203,6 @@ def select_csv_file():
 
 # Tool operation functions
 def export_from_dv():
-    # TODO Retest use
     """Function to export events from Deep Visibility by DV query ID"""
     scroll_text = ScrolledText.ScrolledText(
         master=EXPORT_FROM_DV_FRAME, state="disabled", height=10
@@ -1030,25 +1018,22 @@ def export_all_agents():
     logger.addHandler(text_handler)
 
     datestamp = datetime.datetime.now().strftime("%Y-%m-%d_%f")
-    logger.debug("User selected %s file type", endpoint_output_type.get())
     output_file_name = f"Export_Endpoints_{datestamp}"
     csv_filename = output_file_name + ".csv"
     xlsx_file = output_file_name + ".xlsx"
 
-    firstrun = True
-    url = (
-        HOSTNAME.get()
-        + f"/web/api/{API_VERSION}/agents?{QUERY_LIMITS}&sortBy=computerName&sortOrder=asc"
-    )
+    url = HOSTNAME.get() + f"/web/api/{API_VERSION}/export/agents-light"
 
     logger.info("Starting to request endpoint data.")
-    while url:
-        response = requests.get(
-            url,
-            headers=headers,
-            proxies={"http": PROXY.get(), "https": PROXY.get()},
-            verify=USE_SSL.get(),
-        )
+
+    session = requests.Session()
+    with session.get(
+        url,
+        headers=headers,
+        proxies={"http": PROXY.get(), "https": PROXY.get()},
+        verify=USE_SSL.get(),
+        stream=True,
+    ) as download:
         logger.debug(
             "Calling API with the following:\nURL: %s\tHeaders: %s\tProxy: %s\tUse SSL: %s",
             url,
@@ -1056,78 +1041,35 @@ def export_all_agents():
             PROXY.get(),
             USE_SSL.get(),
         )
-        if response.status_code != 200:
-            logger.error(
-                "Status: %s Problem with the request. Details - %s ",
-                str(response.status_code),
-                str(response.text),
-            )
-            break
-        else:
-            data = response.json()
-            cursor = data["pagination"]["nextCursor"]
-            total_endpoints = data["pagination"]["totalItems"]
-            data = data["data"]
+        download.raise_for_status()
 
-            logger.debug(
-                "%s total endpoints in data. Opening %s to start writing",
-                total_endpoints,
-                csv_filename,
-            )
-            csv_file = csv.writer(
-                open(csv_filename, "a+", newline="", encoding="utf-8")
-            )
-            if firstrun:
-                tmp = []
-                for key, value in data[0].items():
-                    tmp.append(key)
+        logger.info("Writing to %s", csv_filename)
+        with open(csv_filename, mode="wb") as new_file:
+            for chunk in download.iter_content(chunk_size=1024 * 1024):
                 logger.debug(
-                    "Writing column headers to first row: %s",
-                    tmp,
-                )
-                csv_file.writerow(tmp)
-                logger.debug("First run complete, setting firstrun to False")
-                firstrun = False
-            for item in data:
-                tmp = []
-                for key, value in item.items():
-                    tmp.append(value)
-                logger.debug(
-                    "Writing data to new row: %s",
-                    tmp,
-                )
-                csv_file.writerow(tmp)
+                    "Writing chunk: %s", chunk
+                )  # Super-noisy, only uncomment if absolutely necessary for troubleshooting.
+                new_file.write(chunk)
 
-            if cursor:
-                paramsnext = f"/web/api/{API_VERSION}/agents?{QUERY_LIMITS}&sortBy=computerName&sortOrder=asc&cursor={cursor}"
-                url = HOSTNAME.get() + paramsnext
-                logger.debug("Next cursor found, updating URL: %s", url)
-            else:
-                logger.debug("No cursor found, setting URL to None")
-                url = None
+    logger.info("Creating new XLSX: %s", xlsx_file)
+    workbook = Workbook(xlsx_file)
+    logger.debug("Adding new worksheet: 'Endpoints'")
+    worksheet = workbook.add_worksheet("Endpoints")
+    if os.path.isfile(csv_filename):
+        with open(csv_filename, "r", encoding="utf8") as csv_file:
+            logger.info("Reading %s and writing to %s", csv_filename, xlsx_file)
+            reader = csv.reader(csv_file)
+            for r_idx, row in enumerate(reader):
+                for c_idx, col in enumerate(row):
+                    worksheet.write(r_idx, c_idx, col)
+        logger.debug("Deleting %s", csv_filename)
+        os.remove(csv_filename)
+    else:
+        logger.error("%s not found.", csv_filename)
+    logger.debug("Closing XLSX")
+    workbook.close()
 
-    if endpoint_output_type.get() == "xlsx":
-        logger.info("Creating new XLSX: %s", xlsx_file)
-        workbook = Workbook(xlsx_file)
-        logger.debug("Adding new worksheet: 'Endpoints'")
-        worksheet = workbook.add_worksheet("Endpoints")
-        if os.path.isfile(csv_filename):
-            with open(csv_filename, "r", encoding="utf8") as csv_file:
-                logger.info("Reading %s and writing to %s", csv_filename, xlsx_file)
-                reader = csv.reader(csv_file)
-                for r_idx, row in enumerate(reader):
-                    for c_idx, col in enumerate(row):
-                        worksheet.write(r_idx, c_idx, col)
-            logger.debug("Deleting %s", csv_filename)
-            os.remove(csv_filename)
-        else:
-            logger.error("%s not found.", csv_filename)
-        logger.debug("Closing XLSX")
-        workbook.close()
-
-    logger.info(
-        "Done! Output file is - %s.%s\n", output_file_name, endpoint_output_type.get()
-    )
+    logger.info("Done! Output file is - %s.%s\n", output_file_name)
 
 
 def decommission_agents():
@@ -3201,32 +3143,24 @@ ttk.Button(
 # Export all agents Frame #############################
 tk.Label(
     master=EXPORT_ENDPOINTS_FRAME,
-    text="Export All Endpoints",
+    text="Export Endpoints Light-Report",
     font=FRAME_TITLE_FONT,
 ).grid(row=0, column=0, columnspan=2, padx=20, pady=20)
 tk.Label(
     master=EXPORT_ENDPOINTS_FRAME,
-    text="Exports all Agent details to a CSV or XLSX",
+    text="Exports up to 300,000 Agent details to a CSV, and converts it to XLSX",
     font=FRAME_SUBTITLE_FONT,
 ).grid(row=1, column=0, columnspan=2, padx=20, pady=2)
-endpoint_output_type = tk.StringVar()
-endpoint_output_type.set("csv")
-ttk.Radiobutton(
-    EXPORT_ENDPOINTS_FRAME, text="CSV", variable=endpoint_output_type, value="csv"
-).grid(row=2, column=0, padx=10, pady=2, sticky="e")
-ttk.Radiobutton(
-    EXPORT_ENDPOINTS_FRAME, text="XLSX", variable=endpoint_output_type, value="xlsx"
-).grid(row=2, column=1, padx=10, pady=2, sticky="w")
 ttk.Button(
     master=EXPORT_ENDPOINTS_FRAME,
     text="Export",
     command=export_all_agents,
-).grid(row=3, column=0, columnspan=2, pady=10)
+).grid(row=2, column=0, columnspan=2, pady=10)
 ttk.Button(
     master=EXPORT_ENDPOINTS_FRAME,
     text="Back to Main Menu",
     command=go_back_to_mainpage,
-).grid(row=4, column=0, columnspan=2, ipadx=10, pady=10)
+).grid(row=3, column=0, columnspan=2, ipadx=10, pady=10)
 
 
 # Export Exclusions #############################
