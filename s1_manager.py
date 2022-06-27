@@ -25,7 +25,7 @@ from PIL import Image, ImageTk
 from xlsxwriter.workbook import Workbook
 
 # CONSTS
-__version__ = "2022.1.8"
+__version__ = "2022.1.9"
 API_VERSION = "v2.1"
 DIR_PATH = os.path.dirname(os.path.realpath(__file__))
 QUERY_LIMITS = "limit=1000"
@@ -2181,6 +2181,157 @@ def export_users():
     )
 
 
+def export_roles():
+    """Function to handle getting Role/RBAC Details and writing to CSV or XLSX"""
+    scroll_text = ScrolledText.ScrolledText(
+        master=EXPORT_USERS_FRAME, state="disabled", height=10
+    )
+    scroll_text.configure(font=ST_FONT)
+    scroll_text.grid(row=13, column=0, columnspan=2, pady=10)
+    text_handler = TextHandler(scroll_text)
+    logging.basicConfig(
+        filename=LOG_NAME,
+        level=LOG_LEVEL,
+        format=LOG_FORMAT,
+    )
+    logger = logging.getLogger()
+    logger.addHandler(text_handler)
+
+    datestamp = datetime.datetime.now().strftime("%Y-%m-%d_%f")
+    logger.debug("User selected %s file type", user_output_type.get())
+    output_file_name = f"Export_Roles_{datestamp}"
+    csv_filename = f"{output_file_name}.csv"
+    xlsx_filename = f"{output_file_name}.xlsx"
+    role_url = (
+        HOSTNAME.get()
+        + f"/web/api/{API_VERSION}/rbac/roles?{QUERY_LIMITS}&sortOrder=asc&sortBy=name&includeChildren=true&includeParents=true"
+    )
+
+    col_names = [
+        "Account Name",
+        "Created At",
+        "Creator",
+        "Creator ID",
+        "Description",
+        "ID",
+        "Name",
+        "Pages",
+        "Predefined Role",
+        "Scope",
+        "Scope ID",
+        "Site Name",
+        "Updated At",
+        "Updated By",
+        "Updated By ID",
+        "Users In Roles",
+    ]
+
+    logger.info("Getting Roles list")
+    logger.debug(
+        "Calling API with the following:\nURL: %s\tHeaders: %s\tProxy: %s\tUse SSL: %s",
+        role_url,
+        headers,
+        PROXY.get(),
+        USE_SSL.get(),
+    )
+    response = requests.get(
+        role_url,
+        headers=headers,
+        proxies={"http": PROXY.get(), "https": PROXY.get()},
+        verify=USE_SSL.get(),
+    )
+    if response.status_code != 200:
+        logger.error(
+            "Failed to get roles. Error code: %s Description: %s",
+            str(response.status_code),
+            str(response.text),
+        )
+    else:
+        role_data = response.json()
+
+    if role_data:
+        logger.info("Parsing data and populating list of Role IDs")
+        role_id_list = []
+        for role in role_data["data"]:
+            role_id_list.append(role.get("id", None))
+
+        logger.info(
+            "Looping through list of Role IDs to request Role Definitions for each."
+        )
+        rbac_data = []
+        for role_id in role_id_list:
+            if role_id:
+                rbac_url = (
+                    HOSTNAME.get() + f"/web/api/{API_VERSION}/rbac/role/{role_id}"
+                )
+                response = requests.get(
+                    rbac_url,
+                    headers=headers,
+                    proxies={"http": PROXY.get(), "https": PROXY.get()},
+                    verify=USE_SSL.get(),
+                )
+                logger.debug(
+                    "Calling API with the following:\nURL: %s\tHeaders: %s\tProxy: %s\tUse SSL: %s",
+                    rbac_url,
+                    headers,
+                    PROXY.get(),
+                    USE_SSL.get(),
+                )
+                if response.status_code != 200:
+                    logger.error(
+                        "Failed to get role details. Error code: %s Description: %s",
+                        str(response.status_code),
+                        str(response.text),
+                    )
+                else:
+                    response = response.json()
+                    rbac_data.append(response["data"])
+
+        with open(csv_filename, "w+", newline="", encoding="utf-8") as csv_file:
+            csv_writer = csv.DictWriter(csv_file, delimiter=",", fieldnames=col_names)
+            csv_writer.writeheader()
+
+            for role in rbac_data:
+                csv_writer.writerow(
+                    {
+                        "Account Name": role.get("accountName") or "N/A",
+                        "Created At": role.get("createdAt") or "N/A",
+                        "Creator": role.get("creator") or "N/A",
+                        "Creator ID": role.get("creatorId") or "N/A",
+                        "Description": role.get("description") or "N/A",
+                        "ID": role.get("id") or "N/A",
+                        "Name": role.get("name") or "N/A",
+                        "Pages": role.get("pages") or "N/A",
+                        "Predefined Role": role.get("predefinedRole") or "N/A",
+                        "Scope": role.get("scope") or "N/A",
+                        "Scope ID": role.get("scopeId") or "N/A",
+                        "Site Name": role.get("siteName") or "N/A",
+                        "Updated At": role.get("updatedAt") or "N/A",
+                        "Updated By": role.get("updatedBy") or "N/A",
+                        "Updated By ID": role.get("updatedById") or "N/A",
+                        "Users In Roles": role.get("usersInRoles") or "N/A",
+                    }
+                )
+
+        if user_output_type.get() == "xlsx" and os.path.exists(csv_filename):
+            workbook = Workbook(xlsx_filename)
+            worksheet = workbook.add_worksheet()
+            with open(csv_filename, "r", encoding="utf-8") as csv_file:
+                reader = csv.reader(csv_file)
+                for r, row in enumerate(reader):
+                    for c, col in enumerate(row):
+                        worksheet.write(r, c, col)
+            logger.debug("Closing XLSX")
+            workbook.close()
+
+            logger.debug("Deleting %s", csv_filename)
+            os.remove(csv_filename)
+
+    logger.info(
+        "Done! Output file is - %s.%s\n", output_file_name, user_output_type.get()
+    )
+
+
 def export_ranger():
     """Function to handle exporting Ranger Inventory to CSV"""
     scroll_text = ScrolledText.ScrolledText(
@@ -2816,7 +2967,7 @@ ttk.Button(
 ).grid(row=3, column=1, sticky="ew", ipady=5, pady=5, padx=5)
 ttk.Button(
     master=MAIN_MENU_FRAME,
-    text="Export Users",
+    text="Export Users and Roles",
     command=partial(switch_frames, EXPORT_USERS_FRAME),
     width=32,
 ).grid(row=4, column=1, sticky="ew", ipady=5, pady=5, padx=5)
@@ -3310,13 +3461,13 @@ ttk.Button(
 ).grid(row=6, column=0, ipadx=10, pady=10)
 
 
-# Export Users Frame #############################
-tk.Label(master=EXPORT_USERS_FRAME, text="Export Users", font=FRAME_TITLE_FONT).grid(
-    row=0, column=0, columnspan=2, padx=20, pady=20
-)
+# Export Users and Roles Frame #############################
+tk.Label(
+    master=EXPORT_USERS_FRAME, text="Export Users and Roles", font=FRAME_TITLE_FONT
+).grid(row=0, column=0, columnspan=2, padx=20, pady=20)
 tk.Label(
     master=EXPORT_USERS_FRAME,
-    text="Exports User details to CSV.",
+    text="Exports user and role details to CSV or XLSX.",
     font=FRAME_SUBTITLE_FONT,
 ).grid(row=1, column=0, columnspan=2, padx=20, pady=2)
 user_output_type = tk.StringVar()
@@ -3329,9 +3480,14 @@ ttk.Radiobutton(
 ).grid(row=2, column=1, padx=10, pady=2, sticky="w")
 ttk.Button(
     master=EXPORT_USERS_FRAME,
-    text="Export",
+    text="Export Users",
     command=export_users,
-).grid(row=3, column=0, columnspan=2, pady=10)
+).grid(row=3, column=0, pady=10)
+ttk.Button(
+    master=EXPORT_USERS_FRAME,
+    text="Export Roles",
+    command=export_roles,
+).grid(row=3, column=1, pady=10)
 ttk.Button(
     master=EXPORT_USERS_FRAME,
     text="Back to Main Menu",
