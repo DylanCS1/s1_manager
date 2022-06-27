@@ -25,8 +25,8 @@ The S1 Manager tool is a GUI-based application to assist SentinelOne administrat
 
 ### Download EXE
 To download the latest EXE build:
-- [https://github.com/DylanCS1/s1_manager/releases/download/v2022.1.8/s1_manager-2022.1.8.exe](https://github.com/DylanCS1/s1_manager/releases/download/v2022.1.8/s1_manager-2022.1.8.exe)
-- SHA1: 43671F10D3185BDC625AD72EFCED32C10822793E
+- [https://github.com/DylanCS1/s1_manager/releases/download/v2022.1.9/s1_manager-2022.1.9.exe](https://github.com/DylanCS1/s1_manager/releases/download/v2022.1.9/s1_manager-2022.1.9.exe)
+- SHA1: 439925E5BB1554BB8B5B7160F7BA2504AD46B079
 
 To download the pre-2022 release:
 - [https://github.com/DylanCS1/s1_manager/raw/main/.COMPILED/s1_manager-1.0.exe](https://github.com/DylanCS1/s1_manager/raw/main/.COMPILED/s1_manager-1.0.exe)
@@ -197,9 +197,9 @@ Process:
 1. Select a CSV file containing a single column of agent UUIDs
 
 
-### Export Users
+### Export Users and Roles
 
-Export Management Console user details to a CSV or XLSX file.
+Export Management Console user or role details to a CSV or XLSX file.
 
 
 ### Export Ranger Inventory
