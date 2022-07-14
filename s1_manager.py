@@ -25,7 +25,7 @@ from PIL import Image, ImageTk
 from xlsxwriter.workbook import Workbook
 
 # CONSTS
-__version__ = "2022.1.8"
+__version__ = "2022.2.0"
 API_VERSION = "v2.1"
 DIR_PATH = os.path.dirname(os.path.realpath(__file__))
 QUERY_LIMITS = "limit=1000"
@@ -81,6 +81,7 @@ DECOMMISSION_AGENTS_FRAME = ttk.Frame()
 MANAGE_ENDPOINT_TAGS_FRAME = ttk.Frame()
 BULK_RESOLVE_THREATS_FRAME = ttk.Frame()
 UPDATE_SYSTEM_CONFIG_FRAME = ttk.Frame()
+BULK_ENABLE_AGENTS_FRAME = ttk.Frame()
 ERROR = tk.StringVar()
 HOSTNAME = tk.StringVar()
 API_TOKEN = tk.StringVar()
@@ -2367,7 +2368,6 @@ def export_account_ids():
 
 def bulk_resolve_threats():
     """Function to resolve multiple incidents by threat detail string search or SHA1"""
-    # TODO: Test special chars
     scroll_text = ScrolledText.ScrolledText(
         master=BULK_RESOLVE_THREATS_FRAME, state="disabled", height=10
     )
@@ -2706,6 +2706,68 @@ def update_sys_config():
             logger.info("Finished.")
 
 
+def bulk_enable_agents():
+    scroll_text = ScrolledText.ScrolledText(
+        master=BULK_ENABLE_AGENTS_FRAME, state="disabled", height=10
+    )
+    scroll_text.configure(font=ST_FONT)
+    scroll_text.grid(row=13, column=0, columnspan=2, pady=10)
+    text_handler = TextHandler(scroll_text)
+    logging.basicConfig(
+        filename=LOG_NAME,
+        level=LOG_LEVEL,
+        format=LOG_FORMAT,
+    )
+    logger = logging.getLogger()
+    logger.addHandler(text_handler)
+
+    if not group_ids_list.get():
+        logger.error("Must input one or more Group IDs.")
+    else:
+        endpoint = f"/web/api/{API_VERSION}/agents/actions/enable-agent"
+        url = HOSTNAME.get() + endpoint
+        group_ids = [x for x in group_ids_list.get().split(",")]
+        logger.debug("ID List: %s", group_ids)
+
+        payload = json.dumps(
+            {
+                "data": {
+                    "shouldReboot": "false",
+                },
+                "filter": {"operationalStatesNin": "na", "groupIds": group_ids},
+            }
+        )
+
+        response = requests.post(
+            url=url,
+            headers=headers,
+            data=payload,
+            proxies={"http": PROXY.get(), "https": PROXY.get()},
+            verify=USE_SSL.get(),
+        )
+        logger.debug(
+            "Calling API with the following:\nURL: %s\tHeaders: %s\tProxy: %s\tUse SSL: %s",
+            url,
+            headers,
+            PROXY.get(),
+            USE_SSL.get(),
+        )
+        if response.status_code != 200:
+            logger.error(
+                "Status: %s Problem with the request. Details - %s ",
+                str(response.status_code),
+                str(response.text),
+            )
+            response.raise_for_status()
+        else:
+            data = response.json()
+            affected_agents = data.get("data").get("affected", "0")
+            logger.info("Enable Agent action sent to %s", group_ids)
+            logger.info("Total agents Enabled: %s", affected_agents)
+
+        logger.info("Finished.")
+
+
 # Login Menu Frame #############################
 tk.Label(master=LOGIN_MENU_FRAME, image=LOGO).grid(
     row=0, column=0, columnspan=1, pady=20
@@ -2870,10 +2932,16 @@ ttk.Button(
 ).grid(row=3, column=3, sticky="ew", ipady=5, pady=5, padx=5)
 ttk.Button(
     master=MAIN_MENU_FRAME,
+    text="Bulk Enable Agents",
+    command=partial(switch_frames, BULK_ENABLE_AGENTS_FRAME),
+    width=32,
+).grid(row=4, column=3, sticky="ew", ipady=5, pady=5, padx=5)
+ttk.Button(
+    master=MAIN_MENU_FRAME,
     text="Update System Config",
     command=partial(switch_frames, UPDATE_SYSTEM_CONFIG_FRAME),
     width=32,
-).grid(row=4, column=3, sticky="ew", ipady=5, pady=5, padx=5)
+).grid(row=5, column=3, sticky="ew", ipady=5, pady=5, padx=5)
 
 
 if LOG_LEVEL == logging.DEBUG:
@@ -3521,31 +3589,28 @@ ttk.Button(
 ).grid(row=10, column=0, columnspan=2, ipadx=10, pady=10)
 
 
-# Export Account, Site, Group IDs Frame #############################
-# tk.Label(
-#     master=UPDATE_SYSTEM_CONFIG_FRAME,
-#     text="Update System Config",
-#     font=FRAME_TITLE_FONT,
-# ).grid(row=0, column=0, columnspan=2, padx=20, pady=20)
-# tk.Label(
-#     master=UPDATE_SYSTEM_CONFIG_FRAME,
-#     text="Updates the system configuration settings for one or more Accounts.",
-#     font=FRAME_SUBTITLE_FONT,
-# ).grid(row=1, column=0, columnspan=2, padx=20, pady=2)
-# tk.Label(
-#     master=UPDATE_SYSTEM_CONFIG_FRAME,
-#     text="(Optional) Export CSV of all Account IDs",
-# ).grid(row=2, column=0, columnspan=2, padx=20, pady=2)
-# ttk.Button(
-#     master=UPDATE_SYSTEM_CONFIG_FRAME,
-#     text="Export",
-#     command=export_account_ids,
-# ).grid(row=3, column=0, columnspan=2, pady=10)
-# ttk.Button(
-#     master=UPDATE_SYSTEM_CONFIG_FRAME,
-#     text="Back to Main Menu",
-#     command=go_back_to_mainpage,
-# ).grid(row=12, column=0, columnspan=2, ipadx=10, pady=10)
-
+# Bulk Enable Agents Frame #############################
+tk.Label(
+    master=BULK_ENABLE_AGENTS_FRAME,
+    text="Bulk Enable Agents",
+    font=FRAME_TITLE_FONT,
+).grid(row=0, column=0, columnspan=2, padx=20, pady=20)
+tk.Label(
+    master=BULK_ENABLE_AGENTS_FRAME,
+    text="Send 'Enable Agent' action (without reboot) to all disabled agents in the specified list of Group IDs.",
+    font=FRAME_SUBTITLE_FONT,
+).grid(row=1, column=0, columnspan=2, padx=20, pady=2)
+group_ids_list = ttk.Entry(master=BULK_ENABLE_AGENTS_FRAME, width=80)
+group_ids_list.grid(row=2, column=0, columnspan=2, pady=10)
+ttk.Button(
+    master=BULK_ENABLE_AGENTS_FRAME,
+    text="Enable",
+    command=bulk_enable_agents,
+).grid(row=3, column=0, columnspan=2, pady=10)
+ttk.Button(
+    master=BULK_ENABLE_AGENTS_FRAME,
+    text="Back to Main Menu",
+    command=go_back_to_mainpage,
+).grid(row=4, column=0, columnspan=2, ipadx=10, pady=10)
 
 window.mainloop()
