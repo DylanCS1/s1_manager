@@ -25,8 +25,8 @@ The S1 Manager tool is a GUI-based application to assist SentinelOne administrat
 
 ### Download EXE
 To download the latest EXE build:
-- [https://github.com/DylanCS1/s1_manager/releases/download/v2022.1.9/s1_manager-2022.1.9.exe](https://github.com/DylanCS1/s1_manager/releases/download/v2022.1.9/s1_manager-2022.1.9.exe)
-- SHA1: 439925E5BB1554BB8B5B7160F7BA2504AD46B079
+- [https://github.com/DylanCS1/s1_manager/releases/download/v2022.2.0/s1_manager-2022.2.0.exe](https://github.com/DylanCS1/s1_manager/releases/download/v2022.2.0/s1_manager-2022.2.0.exe)
+- SHA1: D664422EAE4A325FB7A334BFE6E610BB3CCF4868
 
 To download the pre-2022 release:
 - [https://github.com/DylanCS1/s1_manager/raw/main/.COMPILED/s1_manager-1.0.exe](https://github.com/DylanCS1/s1_manager/raw/main/.COMPILED/s1_manager-1.0.exe)
@@ -321,6 +321,18 @@ Process:
    - *SHA1* = One or more comma-separated SHA1s (do not include any whitespace)
 3. Select the **Analyst Verdict** from the drop-down: *undefined*, *suspicious*, *false_positive*, or *true_positive*
 4. Input one or more **Site IDs**, separated by a comma (do not include spaces)
+
+
+
+### Bulk Enable Agents
+
+Send 'Enable Agent' action to all agents that are disabled in one or more Groups. 
+
+> **Note:** This does not send a reboot request. This is intentional to avoid an accidental forcecd reboot of a large number of endpoints.
+
+Process:
+1. Input one or more group IDs to send **Enable Agent** action to
+   - *Group IDs* should be comma-separated without any whitespace characters
 
 
 
