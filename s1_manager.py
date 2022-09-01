@@ -25,7 +25,7 @@ from PIL import Image, ImageTk
 from xlsxwriter.workbook import Workbook
 
 # CONSTS
-__version__ = "2022.2.0"
+__version__ = "2022.2.1"
 API_VERSION = "v2.1"
 DIR_PATH = os.path.dirname(os.path.realpath(__file__))
 QUERY_LIMITS = "limit=1000"
@@ -82,6 +82,8 @@ MANAGE_ENDPOINT_TAGS_FRAME = ttk.Frame()
 BULK_RESOLVE_THREATS_FRAME = ttk.Frame()
 UPDATE_SYSTEM_CONFIG_FRAME = ttk.Frame()
 BULK_ENABLE_AGENTS_FRAME = ttk.Frame()
+IMPORT_BLACKLIST_FRAME = ttk.Frame()
+EXPORT_BLACKLIST_FRAME = ttk.Frame()
 ERROR = tk.StringVar()
 HOSTNAME = tk.StringVar()
 API_TOKEN = tk.StringVar()
@@ -1184,7 +1186,7 @@ def decommission_agents():
 
 
 def export_exclusions():
-    """Function to export Exclusions to CSV"""
+    """Function to export Exclusions to XLSX"""
     scroll_text = ScrolledText.ScrolledText(
         master=EXPORT_EXCLUSIONS_FRAME, state="disabled", height=10
     )
@@ -2920,6 +2922,486 @@ def bulk_enable_agents():
 
         logger.info("Finished.")
 
+
+def export_blacklist():
+    """Function to export blacklist to XLSX"""
+    scroll_text = ScrolledText.ScrolledText(
+        master=EXPORT_BLACKLIST_FRAME, state="disabled", height=10
+    )
+    scroll_text.configure(font=ST_FONT)
+    scroll_text.grid(row=13, column=0, pady=10)
+    text_handler = TextHandler(scroll_text)
+    logging.basicConfig(
+        filename=LOG_NAME,
+        level=LOG_LEVEL,
+        format=LOG_FORMAT,
+    )
+    logger = logging.getLogger()
+    logger.addHandler(text_handler)
+
+    async def get_accounts(session):
+        logger.info("Getting accounts data")
+        params = (
+            f"/web/api/{API_VERSION}/accounts?{QUERY_LIMITS}"
+            + "&countOnly=false&tenant=true"
+        )
+        url = HOSTNAME.get() + params
+        while url:
+            async with session.get(url, headers=headers, proxy=PROXY.get()) as response:
+                logger.debug(
+                    "Calling API with the following:\nURL: %s\tHeaders: %s\tProxy: %s\tUse SSL: %s",
+                    url,
+                    headers,
+                    PROXY.get(),
+                    USE_SSL.get(),
+                )
+                if response.status != 200:
+                    logger.error(
+                        "HTTP Response Code: %d %s - There was a problem with the request to %s.",
+                        response.status,
+                        response.reason,
+                        url,
+                    )
+                    break
+                else:
+                    logger.debug("Request successful. Status: %s", str(response.status))
+                    data = await (response.json())
+                    cursor = data["pagination"]["nextCursor"]
+                    data = data["data"]
+                    if data:
+                        for account in data:
+                            dictAccounts[account["id"]] = account["name"]
+                    if cursor:
+                        paramsnext = f"/web/api/{API_VERSION}/accounts?{QUERY_LIMITS}&cursor={cursor}&countOnly=false&tenant=true"
+                        url = HOSTNAME.get() + paramsnext
+                        logger.debug("Found next cursor: %s", cursor)
+                    else:
+                        logger.debug("No cursor found, setting URL to None")
+                        url = None
+
+    async def get_sites(session):
+        logger.info("Getting sites data")
+        params = (
+            f"/web/api/{API_VERSION}/sites?{QUERY_LIMITS}&countOnly=false&tenant=true"
+        )
+        url = HOSTNAME.get() + params
+        while url:
+            async with session.get(url, headers=headers, proxy=PROXY.get()) as response:
+                logger.debug(
+                    "Calling API with the following:\nURL: %s\tHeaders: %s\tProxy: %s\tUse SSL: %s",
+                    url,
+                    headers,
+                    PROXY.get(),
+                    USE_SSL.get(),
+                )
+                if response.status != 200:
+                    logger.error(
+                        "HTTP Response Code: %d %s - There was a problem with the request to %s.",
+                        response.status,
+                        response.reason,
+                        url,
+                    )
+                    break
+                else:
+                    data = await (response.json())
+                    cursor = data["pagination"]["nextCursor"]
+                    data = data["data"]
+                    if data:
+                        for site in data["sites"]:
+                            dictSites[site["id"]] = site["name"]
+                    if cursor:
+                        paramsnext = f"/web/api/{API_VERSION}/sites?{QUERY_LIMITS}&cursor={cursor}&countOnly=false&tenant=true"
+                        url = HOSTNAME.get() + paramsnext
+                        logger.debug("Found next cursor: %s", cursor)
+                    else:
+                        logger.debug("No cursor found, setting URL to None")
+                        url = None
+
+    async def get_groups(session):
+        logger.info("Getting groups data")
+        params = (
+            f"/web/api/{API_VERSION}/groups?{QUERY_LIMITS}&countOnly=false&tenant=true"
+        )
+        url = HOSTNAME.get() + params
+        while url:
+            async with session.get(url, headers=headers, proxy=PROXY.get()) as response:
+                logger.debug(
+                    "Calling API with the following:\nURL: %s\tHeaders: %s\tProxy: %s\tUse SSL: %s",
+                    url,
+                    headers,
+                    PROXY.get(),
+                    USE_SSL.get(),
+                )
+                if response.status != 200:
+                    logger.error(
+                        "HTTP Response Code: %d %s - There was a problem with the request to %s.",
+                        response.status,
+                        response.reason,
+                        url,
+                    )
+                    break
+                else:
+                    data = await (response.json())
+                    cursor = data["pagination"]["nextCursor"]
+                    data = data["data"]
+                    if data:
+                        for group in data:
+                            dictGroups[group["id"]] = group["name"]
+                    if cursor:
+                        paramsnext = f"/web/api/{API_VERSION}/groups?{QUERY_LIMITS}&cursor={cursor}&countOnly=false&tenant=true"
+                        url = HOSTNAME.get() + paramsnext
+                        logger.debug("Found next cursor: %s", cursor)
+                    else:
+                        logger.debug("No cursor found, setting URL to None")
+                        url = None
+
+    async def blacklist_to_csv(querytype, session, scope, exparam):
+        firstrun = True
+        logger.debug("Getting blacklist and writing to CSV")
+        params = f"/web/api/{API_VERSION}/restrictions?{QUERY_LIMITS}&type={querytype}&countOnly=false"
+        url = HOSTNAME.get() + params + exparam
+        while url:
+            async with session.get(url, headers=headers, proxy=PROXY.get()) as response:
+                logger.debug(
+                    "Calling API with the following:\nURL: %s\tHeaders: %s\tProxy: %s\tUse SSL: %s",
+                    url,
+                    headers,
+                    PROXY.get(),
+                    USE_SSL.get(),
+                )
+                if response.status != 200:
+                    logger.error(
+                        "HTTP Response Code: %d %s - There was a problem with the request to %s.",
+                        response.status,
+                        response.reason,
+                        url,
+                    )
+                    break
+                else:
+                    data = await (response.json())
+                    cursor = data["pagination"]["nextCursor"]
+                    data = data["data"]
+                    if data:
+                        for data in data:
+                            csv_file = csv.writer(
+                                open(
+                                    "blacklist.csv",
+                                    "a+",
+                                    newline="",
+                                    encoding="utf-8",
+                                )
+                            )
+                            if firstrun:
+                                # FIXME Need to explicitly write all column headers, not all are present in all JSON responses.
+                                tmp = []
+                                tmp.append("Scope")
+                                for key, value in data.items():
+                                    tmp.append(key)
+                                csv_file.writerow(tmp)
+                                firstrun = False
+                            tmp = []
+                            tmp.append(scope)
+                            for key, value in data.items():
+                                tmp.append(value)
+                            csv_file.writerow(tmp)
+
+                    if cursor:
+                        paramsnext = f"/web/api/{API_VERSION}/restrictions?{QUERY_LIMITS}&type={querytype}&countOnly=false&cursor={cursor}"
+                        url = HOSTNAME.get() + paramsnext + exparam
+                        logger.debug("Found next cursor: %s", cursor)
+                    else:
+                        logger.debug("No cursor found, setting URL to None")
+                        url = None
+
+    async def run(scope):
+        async with aiohttp.ClientSession() as session:
+
+            logger.debug("Scope is: %s", scope)
+            if scope == "Account":
+                exparam = "&accountIds="
+                l = len(dictAccounts.items())
+                i = 0
+                for key, value in dictAccounts.items():
+                    black_hash = asyncio.create_task(
+                        blacklist_to_csv(
+                            "black_hash",
+                            session,
+                            scope + "|" + value + " | " + key,
+                            exparam + key,
+                        )
+                    )
+                    await black_hash
+                    i = i + 1
+            elif scope == "Site":
+                exparam = "&siteIds="
+                l = len(dictSites.items())
+                i = 0
+                for key, value in dictSites.items():
+                    black_hash = asyncio.create_task(
+                        blacklist_to_csv(
+                            "black_hash",
+                            session,
+                            scope + "|" + value + " | " + key,
+                            exparam + key,
+                        )
+                    )
+                    await black_hash
+                    i = i + 1
+            elif scope == "Group":
+                exparam = "&groupIds="
+                l = len(dictGroups.items())
+                i = 0
+                for key, value in dictGroups.items():
+                    black_hash = asyncio.create_task(
+                        blacklist_to_csv(
+                            "black_hash",
+                            session,
+                            scope + "|" + value + " | " + key,
+                            exparam + key,
+                        )
+                    )
+                    await black_hash
+                    i = i + 1
+            elif scope == "Global":
+                exparam = ""
+                key = ""
+                black_hash = asyncio.create_task(
+                    blacklist_to_csv("black_hash", session, scope, exparam + key)
+                )
+                await black_hash
+
+    async def runAccounts():
+        async with aiohttp.ClientSession() as session:
+            logger.debug("Running through accounts")
+            accounts = asyncio.create_task(get_accounts(session))
+            await accounts
+
+    async def runSites():
+        async with aiohttp.ClientSession() as session:
+            logger.debug("Running through sites")
+            sites = asyncio.create_task(get_sites(session))
+            await sites
+
+    async def runGroups():
+        async with aiohttp.ClientSession() as session:
+            logger.debug("Running through groups")
+            groups = asyncio.create_task(get_groups(session))
+            await groups
+
+    def getScope():
+        logger.info("Getting user scope access")
+        url = HOSTNAME.get() + f"/web/api/{API_VERSION}/user"
+        r = requests.get(
+            url,
+            headers=headers,
+            proxies={"http": PROXY.get(), "https": PROXY.get()},
+        )
+        logger.debug(
+            "Calling API with the following:\nURL: %s\tHeaders: %s\tProxy: %s\tUse SSL: %s",
+            url,
+            headers,
+            PROXY.get(),
+            USE_SSL.get(),
+        )
+        if r.status_code == 200:
+            data = r.json()
+            return data["data"]["scope"]
+        else:
+            logger.error(
+                "Status: %s Problem with the request. Details - %s",
+                str(r.status_code),
+                str(r.text),
+            )
+
+    dictAccounts = {}
+    dictSites = {}
+    dictGroups = {}
+    tokenscope = getScope()
+
+    if tokenscope != "site":
+        logger.info("Getting account/site/group structure for %s", HOSTNAME.get())
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(runAccounts())
+
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(runSites())
+
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(runGroups())
+    logger.info("Finished getting account/site/group structure!")
+    logger.info(
+        "Accounts found: %s | Sites found: %s | Groups found: %s",
+        str(len(dictAccounts)),
+        str(len(dictSites)),
+        str(len(dictGroups)),
+    )
+
+    if tokenscope == "global":
+        logger.info("Getting GLOBAL scope blacklist...")
+        scope = "Global"
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(run(scope))
+
+    if tokenscope != "site":
+        logger.info("Getting ACCOUNT scope blacklist...")
+        scope = "Account"
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(run(scope))
+
+    logger.info("Getting SITE scope blacklist...")
+    scope = "Site"
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(run(scope))
+
+    logger.info("Getting GROUP scope blacklist...")
+    scope = "Group"
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(run(scope))
+
+    logger.info("Creating XLSX...")
+
+    datestamp = datetime.datetime.now().strftime("%Y-%m-%d_%f")
+    xlsx_filename = f"Blacklist_Export_{datestamp}.xlsx"
+    workbook = Workbook(xlsx_filename)
+    csvs = [
+        "blacklist.csv",
+    ]
+    for csvfile in csvs:
+        logger.debug("Writing XLSX: %s", csvfile)
+        worksheet = workbook.add_worksheet(csvfile.split(".")[0])
+        if os.path.isfile(csvfile):
+            with open(csvfile, "r", encoding="utf8") as f:
+                reader = csv.reader(f)
+                for r, row in enumerate(reader):
+                    for c, col in enumerate(row):
+                        worksheet.write(r, c, col)
+        if os.path.exists(csvfile):
+            os.remove(csvfile)
+    workbook.close()
+    logger.info("Done! Created the file %s\n", xlsx_filename)
+
+
+def import_blacklist():
+    """Function to export blacklist to XLSX"""
+    scroll_text = ScrolledText.ScrolledText(
+        master=IMPORT_BLACKLIST_FRAME, state="disabled", height=10
+    )
+    scroll_text.configure(font=ST_FONT)
+    scroll_text.grid(row=13, column=0, pady=10)
+    text_handler = TextHandler(scroll_text)
+    logging.basicConfig(
+        filename=LOG_NAME,
+        level=LOG_LEVEL,
+        format=LOG_FORMAT,
+    )
+    logger = logging.getLogger()
+    logger.addHandler(text_handler)
+
+    BL_ENDPOINT = "/restrictions"
+    PARTIAL_URL = f"{HOSTNAME.get()}/web/api/{API_VERSION}"
+    scope_ids = [x for x in bl_scope_ids_list.get().split(",")]
+    multi_run = False
+    rsession = requests.Session()
+    url = PARTIAL_URL + BL_ENDPOINT
+    TYPE = "black_hash"
+    TENANT = False
+
+    with open(INPUT_FILE.get()) as csv_file:
+        logger.debug("Reading CSV: %s", INPUT_FILE.get())
+        csv_reader = csv.reader(csv_file, delimiter=",")
+        next(csv_reader)
+        line_count = 0
+
+        for row in csv_reader:
+            logger.info("Creating Blacklist entry: %s", row)
+
+            value = row[0]
+            os_type = row[1]  # linux, macos, windows, windows_legacy
+            if row[2]:
+                description = row[2]
+            else:
+                description = ""
+
+            logger.debug("Building payload based on selection and row")
+            if selected_scope.get() == "group":
+                bl_payload = json.dumps(
+                    {
+                        "filter": {
+                            "tenant": TENANT,
+                            "groupIds": scope_ids,
+                        },
+                        "data": {
+                            "osType": os_type,
+                            "type": TYPE,
+                            "value": value,
+                            "description": description,
+                        },
+                    }
+                )
+            elif selected_scope.get() == "site":
+                bl_payload = json.dumps(
+                    {
+                        "filter": {
+                            "tenant": False,
+                            "siteIds": scope_ids,
+                        },
+                        "data": {
+                            "osType": os_type,
+                            "type": TYPE,
+                            "value": value,
+                            "description": description,
+                        },
+                    }
+                )
+            else:
+                bl_payload = json.dumps(
+                    {
+                        "filter": {
+                            "tenant": False,
+                            "accountIds": scope_ids,
+                        },
+                        "data": {
+                            "osType": os_type,
+                            "type": TYPE,
+                            "value": value,
+                            "description": description,
+                        },
+                    }
+                )
+
+            logger.debug(
+                "Calling API with the following:\nURL: %s\tData: %s\tHeaders: %s\tProxy: %s\tUse SSL: %s",
+                url,
+                json.dumps(bl_payload),
+                headers,
+                PROXY.get(),
+                USE_SSL.get(),
+            )
+            response = requests.post(
+                url,
+                data=bl_payload,
+                headers=headers,
+                proxies={"http": PROXY.get(), "https": PROXY.get()},
+                verify=USE_SSL.get(),
+            )
+            if response.status_code != 200:
+                logger.error(
+                    "Failed to create new Blacklist entry for hash %s Error code: %s Description: %s",
+                    row[0],
+                    str(response.status_code),
+                    str(response.text).strip(),
+                )
+            else:
+                logger.info(
+                    "Successfully created the Blacklist entry for hash %s", row[0]
+                )
+            line_count += 1
+        if line_count < 1:
+            logger.info("Finished! Input file %s was empty.", INPUT_FILE.get())
+        else:
+            logger.info("Finished! Processed %d lines.", line_count)
+
+
 # Login Menu Frame #############################
 tk.Label(master=LOGIN_MENU_FRAME, image=LOGO).grid(
     row=0, column=0, columnspan=1, pady=20
@@ -3018,6 +3500,15 @@ ttk.Button(
 ).grid(row=5, column=0, sticky="ew", ipady=5, pady=5, padx=5)
 ttk.Button(
     master=MAIN_MENU_FRAME,
+    text="Export Blacklist",
+    command=partial(switch_frames, EXPORT_BLACKLIST_FRAME),
+    width=32,
+).grid(row=6, column=0, sticky="ew", ipady=5, pady=5, padx=5)
+
+
+# Export - Column 1
+ttk.Button(
+    master=MAIN_MENU_FRAME,
     text="Export Endpoint Tags",
     command=partial(switch_frames, EXPORT_ENDPOINT_TAGS_FRAME),
     width=32,
@@ -3040,6 +3531,12 @@ ttk.Button(
     command=partial(switch_frames, EXPORT_RANGER_INV_FRAME),
     width=32,
 ).grid(row=5, column=1, sticky="ew", ipady=5, pady=5, padx=5)
+ttk.Button(
+    master=MAIN_MENU_FRAME,
+    text=" ",
+    command="",
+    width=32,
+).grid(row=6, column=1, sticky="ew", ipady=5, pady=5, padx=5)
 
 
 # Manage - Column 2
@@ -3072,6 +3569,14 @@ ttk.Button(
 ).grid(row=5, column=2, sticky="ew", ipady=5, pady=5, padx=5)
 ttk.Button(
     master=MAIN_MENU_FRAME,
+    text="Import Blacklist",
+    command=partial(switch_frames, IMPORT_BLACKLIST_FRAME),
+    width=32,
+).grid(row=6, column=2, sticky="ew", ipady=5, pady=5, padx=5)
+
+# Export - Column 3
+ttk.Button(
+    master=MAIN_MENU_FRAME,
     text="Manage Endpoint Tags",
     command=partial(switch_frames, MANAGE_ENDPOINT_TAGS_FRAME),
     width=32,
@@ -3094,6 +3599,12 @@ ttk.Button(
     command=partial(switch_frames, UPDATE_SYSTEM_CONFIG_FRAME),
     width=32,
 ).grid(row=5, column=3, sticky="ew", ipady=5, pady=5, padx=5)
+ttk.Button(
+    master=MAIN_MENU_FRAME,
+    text=" ",
+    command="",
+    width=32,
+).grid(row=6, column=3, sticky="ew", ipady=5, pady=5, padx=5)
 
 
 if LOG_LEVEL == logging.DEBUG:
@@ -3769,6 +4280,79 @@ ttk.Button(
     text="Back to Main Menu",
     command=go_back_to_mainpage,
 ).grid(row=4, column=0, columnspan=2, ipadx=10, pady=10)
+
+
+# Export Blacklist #############################
+tk.Label(
+    master=EXPORT_BLACKLIST_FRAME, text="Export Blacklist", font=FRAME_TITLE_FONT
+).grid(row=0, column=0, padx=20, pady=20)
+tk.Label(
+    master=EXPORT_BLACKLIST_FRAME,
+    text="Exports all blacklisted hashes to an XLSX",
+    font=FRAME_SUBTITLE_FONT,
+).grid(row=1, column=0, padx=20, pady=2)
+ttk.Button(
+    master=EXPORT_BLACKLIST_FRAME,
+    text="Export",
+    command=export_blacklist,
+).grid(row=2, column=0, pady=10)
+ttk.Button(
+    master=EXPORT_BLACKLIST_FRAME,
+    text="Back to Main Menu",
+    command=go_back_to_mainpage,
+).grid(row=3, column=0, ipadx=10, pady=10)
+
+
+# Import Blacklist Frame #############################
+tk.Label(
+    master=IMPORT_BLACKLIST_FRAME,
+    text="Import Blacklist",
+    font=FRAME_TITLE_FONT,
+).grid(row=0, column=0, columnspan=2, padx=20, pady=20)
+tk.Label(
+    master=IMPORT_BLACKLIST_FRAME,
+    text="Import a list of SHA1 hashes to blacklist in a defined scope.",
+    font=FRAME_SUBTITLE_FONT,
+).grid(row=1, column=0, columnspan=2, padx=20, pady=2)
+# Select CSV with hashes
+tk.Label(
+    master=IMPORT_BLACKLIST_FRAME,
+    text="1. Select Scope",
+).grid(row=2, column=0, columnspan=2, padx=20, pady=2)
+available_scopes = ("", "group", "site", "account")
+selected_scope = tk.StringVar()
+selected_scope.set(available_scopes[1])
+ttk.OptionMenu(IMPORT_BLACKLIST_FRAME, selected_scope, *available_scopes).grid(
+    row=3, column=0, columnspan=2, pady=10
+)
+tk.Label(
+    master=IMPORT_BLACKLIST_FRAME,
+    text="2. Input one or more scope IDs, comma-separated with no spaces",
+).grid(row=4, column=0, columnspan=2, padx=20, pady=2)
+bl_scope_ids_list = ttk.Entry(master=IMPORT_BLACKLIST_FRAME, width=80)
+bl_scope_ids_list.grid(row=5, column=0, columnspan=2, pady=10)
+tk.Label(
+    master=IMPORT_BLACKLIST_FRAME,
+    text="3. Select CSV with list of SHA1 hashes to blacklist",
+).grid(row=6, column=0, columnspan=2, padx=20, pady=2)
+ttk.Button(
+    master=IMPORT_BLACKLIST_FRAME,
+    text="Browse",
+    command=select_csv_file,
+).grid(row=7, column=0, columnspan=2, pady=10)
+tk.Label(master=IMPORT_BLACKLIST_FRAME, textvariable=INPUT_FILE).grid(
+    row=8, column=0, columnspan=2, pady=2
+)
+ttk.Button(
+    master=IMPORT_BLACKLIST_FRAME,
+    text="Import",
+    command=import_blacklist,
+).grid(row=9, column=0, columnspan=2, pady=10)
+ttk.Button(
+    master=IMPORT_BLACKLIST_FRAME,
+    text="Back to Main Menu",
+    command=go_back_to_mainpage,
+).grid(row=10, column=0, columnspan=2, ipadx=10, pady=10)
 
 
 window.mainloop()

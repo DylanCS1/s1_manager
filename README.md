@@ -25,8 +25,8 @@ The S1 Manager tool is a GUI-based application to assist SentinelOne administrat
 
 ### Download EXE
 To download the latest EXE build:
-- [https://github.com/DylanCS1/s1_manager/releases/download/v2022.2.0/s1_manager-2022.2.0.exe](https://github.com/DylanCS1/s1_manager/releases/download/v2022.2.0/s1_manager-2022.2.0.exe)
-- SHA1: D664422EAE4A325FB7A334BFE6E610BB3CCF4868
+- [https://github.com/DylanCS1/s1_manager/releases/download/v2022.2.1/s1_manager-2022.2.1.exe](https://github.com/DylanCS1/s1_manager/releases/download/v2022.2.1/s1_manager-2022.2.1.exe)
+- SHA1: 1DD3FE1664D7E9C691B856AE5FEDA2DF980824D6
 
 To download the pre-2022 release:
 - [https://github.com/DylanCS1/s1_manager/raw/main/.COMPILED/s1_manager-1.0.exe](https://github.com/DylanCS1/s1_manager/raw/main/.COMPILED/s1_manager-1.0.exe)
@@ -177,7 +177,7 @@ Export Endpoint Light-report to CSV and convert to XLSX.
 
 ### Export Exclusions
 
-Export all exclusions from the Account scope.
+Export all exclusions. The scope of entries is associated with the API Token and its level of access.
 > CSVs are temporarily created and then merged into a single XLSX, one worksheet per exclusion type.
 
 ![Exclusion CSV Example][exclusion-screenshot]
@@ -212,6 +212,12 @@ Process:
 1. Select which scope to export Ranger Inventory from: **Account** or **Site**
 2. Select a CSV containing a single column of Account or Site IDs to process
 3. Pick a time period for data export
+
+
+### Export Blacklist
+
+Export all blacklist entries. The scope of entries is associated with the API Token and its level of access.
+> A CSV is temporarily created and then converted into an XLSX.
 
 
 <p align="right">(<a href="#top">back to top</a>)</p>
@@ -365,6 +371,25 @@ Example JSON:
 - In the tool's current form, it relies on the "filter" subsection of the JSON - do not remove it.  
 
 
+### Import Blacklist
+
+Process:
+1. Select scope (group, site, or account).
+   - Note: Tenant/Global not supported at this time.
+2. Input one, or more, IDs of the chose scope type. *Multiple IDs should be comma-separated with no white space.*
+3. Click browse to select a CSV with the blacklist entries to import.
+
+CSV requirements:
+- The first row is ignored by the script, this row can include headers or be empty
+- The first column must contain the SHA1 value
+- The second column must contain the OS Type (windows, linux, macos, windows_legacy)
+- The third column optionally can contain a description
+
+Refer to the following screenshot for an example.  
+
+![Blacklist CSV Example][blacklist-screenshot]
+
+
 <p align="right">(<a href="#top">back to top</a>)</p>
 
 
@@ -444,3 +469,4 @@ And to the following resources:
 [dev-tools-screenshot]: readme/dev_tools.png "Dev Tools example"
 [group-id-screenshot]: readme/group_id.png "Group ID example"
 [csv-example-screenshot]: readme/csv_example.png "CSV example"
+[blacklist-screenshot]: readme/bl_csv_example.png "Example Blacklist CSV"
