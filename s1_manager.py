@@ -25,7 +25,7 @@ from PIL import Image, ImageTk
 from xlsxwriter.workbook import Workbook
 
 # CONSTS
-__version__ = "2022.2.1"
+__version__ = "2022.2.2"
 API_VERSION = "v2.1"
 DIR_PATH = os.path.dirname(os.path.realpath(__file__))
 QUERY_LIMITS = "limit=1000"
@@ -74,6 +74,7 @@ EXPORT_EXCLUSIONS_FRAME = ttk.Frame()
 EXPORT_LOCAL_CONFIG_FRAME = ttk.Frame()
 EXPORT_USERS_FRAME = ttk.Frame()
 EXPORT_RANGER_INV_FRAME = ttk.Frame()
+EXPORT_BLACKLIST_FRAME = ttk.Frame()
 UPGRADE_FROM_CSV_FRAME = ttk.Frame()
 MOVE_AGENTS_FRAME = ttk.Frame()
 ASSIGN_CUSTOMER_ID_FRAME = ttk.Frame()
@@ -83,7 +84,7 @@ BULK_RESOLVE_THREATS_FRAME = ttk.Frame()
 UPDATE_SYSTEM_CONFIG_FRAME = ttk.Frame()
 BULK_ENABLE_AGENTS_FRAME = ttk.Frame()
 IMPORT_BLACKLIST_FRAME = ttk.Frame()
-EXPORT_BLACKLIST_FRAME = ttk.Frame()
+IMPORT_EXCLUSION_FRAME = ttk.Frame()
 ERROR = tk.StringVar()
 HOSTNAME = tk.StringVar()
 API_TOKEN = tk.StringVar()
@@ -3282,7 +3283,7 @@ def export_blacklist():
 
 
 def import_blacklist():
-    """Function to export blacklist to XLSX"""
+    """Function to import blacklist hashes"""
     scroll_text = ScrolledText.ScrolledText(
         master=IMPORT_BLACKLIST_FRAME, state="disabled", height=10
     )
@@ -3300,7 +3301,6 @@ def import_blacklist():
     BL_ENDPOINT = "/restrictions"
     PARTIAL_URL = f"{HOSTNAME.get()}/web/api/{API_VERSION}"
     scope_ids = [x for x in bl_scope_ids_list.get().split(",")]
-    multi_run = False
     rsession = requests.Session()
     url = PARTIAL_URL + BL_ENDPOINT
     TYPE = "black_hash"
@@ -3317,13 +3317,14 @@ def import_blacklist():
 
             value = row[0]
             os_type = row[1]  # linux, macos, windows, windows_legacy
-            if row[2]:
-                description = row[2]
-            else:
-                description = ""
+            description = row[2] or ""
+            # if row[2]:
+            #     description = row[2]
+            # else:
+            #     description = ""
 
             logger.debug("Building payload based on selection and row")
-            if selected_scope.get() == "group":
+            if bl_selected_scope.get() == "group":
                 bl_payload = json.dumps(
                     {
                         "filter": {
@@ -3338,11 +3339,11 @@ def import_blacklist():
                         },
                     }
                 )
-            elif selected_scope.get() == "site":
+            elif bl_selected_scope.get() == "site":
                 bl_payload = json.dumps(
                     {
                         "filter": {
-                            "tenant": False,
+                            "tenant": TENANT,
                             "siteIds": scope_ids,
                         },
                         "data": {
@@ -3357,7 +3358,7 @@ def import_blacklist():
                 bl_payload = json.dumps(
                     {
                         "filter": {
-                            "tenant": False,
+                            "tenant": TENANT,
                             "accountIds": scope_ids,
                         },
                         "data": {
@@ -3369,15 +3370,16 @@ def import_blacklist():
                     }
                 )
 
+            logger.debug("Payload for row %s", bl_payload)
             logger.debug(
                 "Calling API with the following:\nURL: %s\tData: %s\tHeaders: %s\tProxy: %s\tUse SSL: %s",
                 url,
-                json.dumps(bl_payload),
+                bl_payload,
                 headers,
                 PROXY.get(),
                 USE_SSL.get(),
             )
-            response = requests.post(
+            response = rsession.post(
                 url,
                 data=bl_payload,
                 headers=headers,
@@ -3395,6 +3397,127 @@ def import_blacklist():
                 logger.info(
                     "Successfully created the Blacklist entry for hash %s", row[0]
                 )
+            line_count += 1
+        if line_count < 1:
+            logger.info("Finished! Input file %s was empty.", INPUT_FILE.get())
+        else:
+            logger.info("Finished! Processed %d lines.", line_count)
+
+
+def import_exclusions():
+    """Function to import exclusions"""
+    scroll_text = ScrolledText.ScrolledText(
+        master=IMPORT_EXCLUSION_FRAME, state="disabled", height=10
+    )
+    scroll_text.configure(font=ST_FONT)
+    scroll_text.grid(row=13, column=0, pady=10)
+    text_handler = TextHandler(scroll_text)
+    logging.basicConfig(
+        filename=LOG_NAME,
+        level=LOG_LEVEL,
+        format=LOG_FORMAT,
+    )
+    logger = logging.getLogger()
+    logger.addHandler(text_handler)
+
+    EXCL_ENDPOINT = "/exclusions"
+    PARTIAL_URL = f"{HOSTNAME.get()}/web/api/{API_VERSION}"
+    scope_ids = [x for x in excl_scope_ids_list.get().split(",")]
+    rsession = requests.Session()
+    url = PARTIAL_URL + EXCL_ENDPOINT
+    TENANT = False
+
+    with open(INPUT_FILE.get()) as csv_file:
+        logger.debug("Reading CSV: %s", INPUT_FILE.get())
+        csv_reader = csv.reader(csv_file, delimiter=",")
+        next(csv_reader)
+        line_count = 0
+
+        for row in csv_reader:
+            logger.info("Creating Exclusion entry: %s", row)
+
+            value = row[0]
+            type = row[1]  # browser, certificate, file_type, path, white_hash
+            os_type = row[2]  # linux, macos, windows, windows_legacy
+            mode = (
+                row[3] or None
+            )  # disable_all_monitors, disable_all_monitors_deep, disable_in_process_monitor, disable_in_process_monitor_deep, suppress, suppress_app_control, suppress_dfi_only, suppress_dynamic_only
+            path_excl_type = row[4] or None  # file, subfolders
+            description = row[5] or ""
+
+            logger.debug("Building payload filter based on selection")
+            if excl_selected_scope.get() == "group":
+                excl_payload_filter = {
+                    "filter": {
+                        "tenant": TENANT,
+                        "groupIds": scope_ids,
+                    }
+                }
+            elif excl_selected_scope.get() == "site":
+                excl_payload_filter = {
+                    "filter": {
+                        "tenant": TENANT,
+                        "siteIds": scope_ids,
+                    }
+                }
+            else:
+                excl_payload_filter = {
+                    "filter": {
+                        "tenant": TENANT,
+                        "accountIds": scope_ids,
+                    }
+                }
+
+            logger.debug("Building payload data based on row")
+            if row[1] in ("browser", "certificate", "file_type", "white_hash"):
+                excl_payload_data = {
+                    "data": {
+                        "osType": os_type,
+                        "type": type,
+                        "value": value,
+                        "description": description,
+                    }
+                }
+            else:
+                excl_payload_data = {
+                    "data": {
+                        "osType": os_type,
+                        "type": type,
+                        "value": value,
+                        "description": description,
+                        "mode": mode,
+                        "pathExclusionType": path_excl_type,
+                    }
+                }
+
+            logger.debug("Building payload")
+            excl_payload = json.dumps({**excl_payload_filter, **excl_payload_data})
+            logger.debug("Payload for row %s", excl_payload)
+
+            logger.debug(
+                "Calling API with the following:\nURL: %s\tData: %s\tHeaders: %s\tProxy: %s\tUse SSL: %s",
+                url,
+                excl_payload,
+                headers,
+                PROXY.get(),
+                USE_SSL.get(),
+            )
+            response = rsession.post(
+                url,
+                data=excl_payload,
+                headers=headers,
+                proxies={"http": PROXY.get(), "https": PROXY.get()},
+                verify=USE_SSL.get(),
+            )
+            if response.status_code != 200:
+                logger.error(
+                    "Failed to create new Exclusion entry for %s Error code: %s Description: %s",
+                    row[0],
+                    str(response.status_code),
+                    str(response.text).strip(),
+                )
+            else:
+                logger.info("Successfully created the Exclusion entry for %s", row[0])
             line_count += 1
         if line_count < 1:
             logger.info("Finished! Input file %s was empty.", INPUT_FILE.get())
@@ -3601,8 +3724,8 @@ ttk.Button(
 ).grid(row=5, column=3, sticky="ew", ipady=5, pady=5, padx=5)
 ttk.Button(
     master=MAIN_MENU_FRAME,
-    text=" ",
-    command="",
+    text="Import Exclusions",
+    command=partial(switch_frames, IMPORT_EXCLUSION_FRAME),
     width=32,
 ).grid(row=6, column=3, sticky="ew", ipady=5, pady=5, padx=5)
 
@@ -4314,15 +4437,14 @@ tk.Label(
     text="Import a list of SHA1 hashes to blacklist in a defined scope.",
     font=FRAME_SUBTITLE_FONT,
 ).grid(row=1, column=0, columnspan=2, padx=20, pady=2)
-# Select CSV with hashes
 tk.Label(
     master=IMPORT_BLACKLIST_FRAME,
     text="1. Select Scope",
 ).grid(row=2, column=0, columnspan=2, padx=20, pady=2)
-available_scopes = ("", "group", "site", "account")
-selected_scope = tk.StringVar()
-selected_scope.set(available_scopes[1])
-ttk.OptionMenu(IMPORT_BLACKLIST_FRAME, selected_scope, *available_scopes).grid(
+bl_available_scopes = ("", "group", "site", "account")
+bl_selected_scope = tk.StringVar()
+bl_selected_scope.set(bl_available_scopes[1])
+ttk.OptionMenu(IMPORT_BLACKLIST_FRAME, bl_selected_scope, *bl_available_scopes).grid(
     row=3, column=0, columnspan=2, pady=10
 )
 tk.Label(
@@ -4350,6 +4472,57 @@ ttk.Button(
 ).grid(row=9, column=0, columnspan=2, pady=10)
 ttk.Button(
     master=IMPORT_BLACKLIST_FRAME,
+    text="Back to Main Menu",
+    command=go_back_to_mainpage,
+).grid(row=10, column=0, columnspan=2, ipadx=10, pady=10)
+
+
+# Import Exclusion Frame #############################
+tk.Label(
+    master=IMPORT_EXCLUSION_FRAME,
+    text="Import Exclusions",
+    font=FRAME_TITLE_FONT,
+).grid(row=0, column=0, columnspan=2, padx=20, pady=20)
+tk.Label(
+    master=IMPORT_EXCLUSION_FRAME,
+    text="Import a list of exclusions to a defined scope.",
+    font=FRAME_SUBTITLE_FONT,
+).grid(row=1, column=0, columnspan=2, padx=20, pady=2)
+tk.Label(
+    master=IMPORT_EXCLUSION_FRAME,
+    text="1. Select Scope",
+).grid(row=2, column=0, columnspan=2, padx=20, pady=2)
+excl_available_scopes = ("", "group", "site", "account")
+excl_selected_scope = tk.StringVar()
+excl_selected_scope.set(excl_available_scopes[1])
+ttk.OptionMenu(
+    IMPORT_EXCLUSION_FRAME, excl_selected_scope, *excl_available_scopes
+).grid(row=3, column=0, columnspan=2, pady=10)
+tk.Label(
+    master=IMPORT_EXCLUSION_FRAME,
+    text="2. Input one or more scope IDs, comma-separated with no spaces",
+).grid(row=4, column=0, columnspan=2, padx=20, pady=2)
+excl_scope_ids_list = ttk.Entry(master=IMPORT_EXCLUSION_FRAME, width=80)
+excl_scope_ids_list.grid(row=5, column=0, columnspan=2, pady=10)
+tk.Label(
+    master=IMPORT_EXCLUSION_FRAME,
+    text="3. Select CSV with list of exclusions to import",
+).grid(row=6, column=0, columnspan=2, padx=20, pady=2)
+ttk.Button(
+    master=IMPORT_EXCLUSION_FRAME,
+    text="Browse",
+    command=select_csv_file,
+).grid(row=7, column=0, columnspan=2, pady=10)
+tk.Label(master=IMPORT_EXCLUSION_FRAME, textvariable=INPUT_FILE).grid(
+    row=8, column=0, columnspan=2, pady=2
+)
+ttk.Button(
+    master=IMPORT_EXCLUSION_FRAME,
+    text="Import",
+    command=import_exclusions,
+).grid(row=9, column=0, columnspan=2, pady=10)
+ttk.Button(
+    master=IMPORT_EXCLUSION_FRAME,
     text="Back to Main Menu",
     command=go_back_to_mainpage,
 ).grid(row=10, column=0, columnspan=2, ipadx=10, pady=10)

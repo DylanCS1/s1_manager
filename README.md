@@ -10,7 +10,9 @@
 
 The S1 Manager tool is a GUI-based application to assist SentinelOne administrators in performing specific tasks via the v2.1 API. 
 
-> This tool requires a SentinelOne Management Console and an API Token for a user with appropriate permissions to run the various API calls. Use of this tool assumes the user has an active license to use the SentinelOne product.
+> Note: This tool requires a SentinelOne Management Console and an API Token for a user with appropriate permissions to run the various API calls. 
+
+> Important: This tool is provided "As Is" and comes with no warranty, guarantee, or support. Use of this tool assumes the user has an active license to use the SentinelOne product and has reviewed the code to understand what actions the tool is performing.
 
 <div align="center">
 
@@ -25,8 +27,8 @@ The S1 Manager tool is a GUI-based application to assist SentinelOne administrat
 
 ### Download EXE
 To download the latest EXE build:
-- [https://github.com/DylanCS1/s1_manager/releases/download/v2022.2.1/s1_manager-2022.2.1.exe](https://github.com/DylanCS1/s1_manager/releases/download/v2022.2.1/s1_manager-2022.2.1.exe)
-- SHA1: 1DD3FE1664D7E9C691B856AE5FEDA2DF980824D6
+- [https://github.com/DylanCS1/s1_manager/releases/download/v2022.2.2/s1_manager-2022.2.2.exe](https://github.com/DylanCS1/s1_manager/releases/download/v2022.2.2/s1_manager-2022.2.2.exe)
+- SHA1: E6A0F8EAA516958B0F71F26ED13C16B135CCEFC6
 
 To download the pre-2022 release:
 - [https://github.com/DylanCS1/s1_manager/raw/main/.COMPILED/s1_manager-1.0.exe](https://github.com/DylanCS1/s1_manager/raw/main/.COMPILED/s1_manager-1.0.exe)
@@ -390,6 +392,52 @@ Refer to the following screenshot for an example.
 ![Blacklist CSV Example][blacklist-screenshot]
 
 
+### Import Exclusion
+
+Process:
+1. Select scope (group, site, or account).
+   - Note: Tenant/Global not supported at this time.
+2. Input one, or more, IDs of the chose scope type. *Multiple IDs should be comma-separated with no white space.*
+3. Click browse to select a CSV with the exclusion entries to import.
+
+CSV requirements:
+- The first row is ignored by the script, this row can include headers or be empty
+- The first column must contain the value to exclude
+- The second column must contain the type of exclusion 
+- The third column must contain the OS type
+- The fourth column is applicable only to the `path` type, and must contain the mode
+- The fifth column is applicable only to the `path` type, and must contain the pathExclusionType
+- The sixth column optionally can contain a description
+
+Available exclusion types:
+- white_hash
+- path
+- file_type
+- certificate
+- browser
+
+Available OS Types:
+- windows
+- windows_legacy
+- macos
+- linux
+
+Available modes for path exclusions:
+- suppress
+- suppress_dfi_only
+- suppress_dynamic_only
+- suppress_app_control
+- disable_all_monitors
+- disable_all_monitors_deep
+- disable_in_process_monitor
+- disable_in_process_monitor_deep
+
+
+Refer to the following screenshot for an example.  
+
+![Exclusion Import CSV Example][exclusion2-screenshot]
+
+
 <p align="right">(<a href="#top">back to top</a>)</p>
 
 
@@ -465,6 +513,7 @@ And to the following resources:
 [login-view]: readme/login_view.png "Login"
 [dv-screenshot]: readme/dv_query.png "Deep Visibility Query"
 [exclusion-screenshot]: readme/exclusion_export.png "Example Exclusion CSV"
+[exclusion2-screenshot]: readme/wl_csv_example.png "Example Exclusion Import CSV"
 [endpoint-screenshot]: readme/endpoint_names.png "CSV Endpoint Names example"
 [dev-tools-screenshot]: readme/dev_tools.png "Dev Tools example"
 [group-id-screenshot]: readme/group_id.png "Group ID example"
