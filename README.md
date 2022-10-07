@@ -180,7 +180,10 @@ Export Endpoint Light-report to CSV and convert to XLSX.
 ### Export Exclusions
 
 Export all exclusions. The scope of entries is associated with the API Token and its level of access.
-> CSVs are temporarily created and then merged into a single XLSX, one worksheet per exclusion type.
+
+This operation creates one CSV per Exclusion type (file type, path, browser, certificate, and hash). These are then merged into a single XLSX.
+> By default, this will save both the generated CSVs and the merged XLSX. You can toggle off saving the CSVs.
+
 
 ![Exclusion CSV Example][exclusion-screenshot]
 
@@ -219,8 +222,10 @@ Process:
 ### Export Blacklist
 
 Export all blacklist entries. The scope of entries is associated with the API Token and its level of access.
-> A CSV is temporarily created and then converted into an XLSX.
 
+This operation creates one CSV per Exclusion type (file type, path, browser, certificate, and hash). These are then merged into a single XLSX.
+> By default, this will save both the generated CSV and the merged XLSX. You can toggle off saving the CSV.
+> 
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
@@ -423,14 +428,14 @@ Available OS Types:
 - linux
 
 Available modes for path exclusions:
-- suppress
-- suppress_dfi_only
-- suppress_dynamic_only
-- suppress_app_control
-- disable_all_monitors
-- disable_all_monitors_deep
-- disable_in_process_monitor
-- disable_in_process_monitor_deep
+- suppress == Suppress Alerts - All engines
+- suppress_dfi_only == Suppress Alerts - Static AI only
+- suppress_dynamic_only == Suppress Alerts - Dynamic AI only
+- suppress_app_control == Suppress Alerts - App Control only
+- disable_all_monitors == Performance Focus
+- disable_all_monitors_deep == Performance Focus extended
+- disable_in_process_monitor == Interoperability
+- disable_in_process_monitor_deep == Interoperability extended
 
 
 Refer to the following screenshot for an example.  
