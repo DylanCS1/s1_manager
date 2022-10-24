@@ -27,8 +27,8 @@ The S1 Manager tool is a GUI-based application to assist SentinelOne administrat
 
 ### Download EXE
 To download the latest EXE build:
-- [https://github.com/DylanCS1/s1_manager/releases/download/v2022.2.2/s1_manager-2022.2.2.exe](https://github.com/DylanCS1/s1_manager/releases/download/v2022.2.2/s1_manager-2022.2.2.exe)
-- SHA1: E6A0F8EAA516958B0F71F26ED13C16B135CCEFC6
+- [https://github.com/DylanCS1/s1_manager/releases/download/v2022.2.3/s1_manager-2022.2.3.exe](https://github.com/DylanCS1/s1_manager/releases/download/v2022.2.3/s1_manager-2022.2.3.exe)
+- SHA1: 09000D00849B27EDC006F86EE96FD61EBD8DF2AC
 
 To download the pre-2022 release:
 - [https://github.com/DylanCS1/s1_manager/raw/main/.COMPILED/s1_manager-1.0.exe](https://github.com/DylanCS1/s1_manager/raw/main/.COMPILED/s1_manager-1.0.exe)
@@ -388,7 +388,7 @@ Process:
 
 CSV requirements:
 - The first row is ignored by the script, this row can include headers or be empty
-- The first column must contain the SHA1 value
+- The first column must contain the SHA1 value *(2022.2.3 strips out whitespace from this column)*
 - The second column must contain the OS Type (windows, linux, macos, windows_legacy)
 - The third column optionally can contain a description
 

@@ -25,7 +25,7 @@ from PIL import Image, ImageTk
 from xlsxwriter.workbook import Workbook
 
 # CONSTS
-__version__ = "2022.2.2"
+__version__ = "2022.2.3"
 API_VERSION = "v2.1"
 DIR_PATH = os.path.dirname(os.path.realpath(__file__))
 QUERY_LIMITS = "limit=1000"
@@ -3313,11 +3313,11 @@ def import_blacklist():
         line_count = 0
 
         for row in csv_reader:
-            logger.info("Creating Blacklist entry: %s", row)
 
-            value = row[0]
+            value = row[0].strip()
             os_type = row[1]  # linux, macos, windows, windows_legacy
             description = row[2] or ""
+            logger.info("Creating Blacklist entry: %s - %s - %s", value, os_type, description)
             # if row[2]:
             #     description = row[2]
             # else:
@@ -3395,7 +3395,7 @@ def import_blacklist():
                 )
             else:
                 logger.info(
-                    "Successfully created the Blacklist entry for hash %s", row[0]
+                    "Successfully created the Blacklist entry for hash %s", value
                 )
             line_count += 1
         if line_count < 1:
