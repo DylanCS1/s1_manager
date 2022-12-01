@@ -27,8 +27,8 @@ The S1 Manager tool is a GUI-based application to assist SentinelOne administrat
 
 ### Download EXE
 To download the latest EXE build:
-- [https://github.com/DylanCS1/s1_manager/releases/download/v2022.2.3/s1_manager-2022.2.3.exe](https://github.com/DylanCS1/s1_manager/releases/download/v2022.2.3/s1_manager-2022.2.3.exe)
-- SHA1: 09000D00849B27EDC006F86EE96FD61EBD8DF2AC
+- [https://github.com/DylanCS1/s1_manager/releases/download/v2022.2.4/s1_manager-2022.2.4.exe](https://github.com/DylanCS1/s1_manager/releases/download/v2022.2.4/s1_manager-2022.2.4.exe)
+- SHA1: 4D12F2083D59E0E944268C0187F8C118BA39E5A3
 
 To download the pre-2022 release:
 - [https://github.com/DylanCS1/s1_manager/raw/main/.COMPILED/s1_manager-1.0.exe](https://github.com/DylanCS1/s1_manager/raw/main/.COMPILED/s1_manager-1.0.exe)
@@ -154,6 +154,7 @@ To generate a Deep Visibility query:
 
 
 ### Export Activity Log
+**Deprecated** - Feature resides in Console
 
 Search and Export the Activity log.
 > Currently, the exported results are constrained by the FROM and TO dates, not the search term. To see search results more clearly, refer to the s1_manager.log 
@@ -170,6 +171,7 @@ Process:
 
 
 ### Export Endpoints
+**Deprecated** - Feature resides in Console
 
 Export Endpoint Light-report to CSV and convert to XLSX.
 > This includes up to 300,000 endpoints and associated details.
@@ -181,8 +183,7 @@ Export Endpoint Light-report to CSV and convert to XLSX.
 
 Export all exclusions. The scope of entries is associated with the API Token and its level of access.
 
-This operation creates one CSV per Exclusion type (file type, path, browser, certificate, and hash). These are then merged into a single XLSX.
-> By default, this will save both the generated CSVs and the merged XLSX. You can toggle off saving the CSVs.
+> This operation creates one CSV per Exclusion type (file type, path, browser, certificate, and hash). These are then merged into a single XLSX.
 
 
 ![Exclusion CSV Example][exclusion-screenshot]
@@ -196,13 +197,14 @@ Export Endpoint Tag details to CSV for all scopes in Management Console.
 
 ### Export Local Config
 
-Export Agent local configuration(s) to a single JSON file for all Agent UUIDs in a supplied CSV.
+Export Agent local configuration(s) to a single JSON file for all Agent UUIDs in a supplied CSV. This can be useful to determine what local configuration is applied to agent, which may not be easily identified via the Management Console.
 
 Process:
 1. Select a CSV file containing a single column of agent UUIDs
 
 
 ### Export Users and Roles
+**Deprecated** - Feature resides in Console
 
 Export Management Console user or role details to a CSV or XLSX file.
 
@@ -223,9 +225,8 @@ Process:
 
 Export all blacklist entries. The scope of entries is associated with the API Token and its level of access.
 
-This operation creates one CSV per Exclusion type (file type, path, browser, certificate, and hash). These are then merged into a single XLSX.
-> By default, this will save both the generated CSV and the merged XLSX. You can toggle off saving the CSV.
-> 
+> This creates a CSV and an XLSX
+
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
@@ -233,6 +234,7 @@ This operation creates one CSV per Exclusion type (file type, path, browser, cer
 ## Available Manage Operations
 
 ### Upgrade Agents
+**Deprecated** - Feature resides in Console
 
 Bulk upgrade agents from a named endpoint list in a CSV file.
 
@@ -277,6 +279,7 @@ Process:
 
 
 ### Assign Customer Identifier
+**Deprecated** - Feature resides in Console
 
 Easily add a Customer Identifier to Agents from a source CSV of endpoint names.
 
@@ -351,6 +354,8 @@ Process:
 
 ### Update System Configuration
 
+**Note:** This can cause unexpected results. Use with caution.
+
 Accepts a JSON file with the changes to apply to one, or more, Site or Account IDs. 
 
 Process:
@@ -388,7 +393,9 @@ Process:
 
 CSV requirements:
 - The first row is ignored by the script, this row can include headers or be empty
-- The first column must contain the SHA1 value *(2022.2.3 strips out whitespace from this column)*
+- The first column must contain the SHA1 value
+> 2022.2.3 strips out whitespace from this column
+> 2022.2.4 checks length. If hash is not 40 characters exactly returns an error for that hash.
 - The second column must contain the OS Type (windows, linux, macos, windows_legacy)
 - The third column optionally can contain a description
 

@@ -25,7 +25,7 @@ from PIL import Image, ImageTk
 from xlsxwriter.workbook import Workbook
 
 # CONSTS
-__version__ = "2022.2.3"
+__version__ = "2022.2.4"
 API_VERSION = "v2.1"
 DIR_PATH = os.path.dirname(os.path.realpath(__file__))
 QUERY_LIMITS = "limit=1000"
@@ -124,6 +124,7 @@ def test_login(hostname, apitoken, proxy):
         "Content-type": "application/json",
         "Authorization": "ApiToken " + apitoken,
         "Accept": "application/json",
+        "User-Agent": f"S1 Manager {__version__}",
     }
     response = requests.get(
         hostname + f"/web/api/{API_VERSION}/system/info",
@@ -138,6 +139,8 @@ def test_login(hostname, apitoken, proxy):
         headers = {
             "Content-type": "application/json",
             "Authorization": "Token " + apitoken,
+            "Accept": "application/json",
+            "User-Agent": f"S1 Manager {__version__}",
         }
         response = requests.get(
             hostname + f"/web/api/{API_VERSION}/system/info",
@@ -1202,6 +1205,12 @@ def export_exclusions():
     logger = logging.getLogger()
     logger.addHandler(text_handler)
 
+    firstrunpath = True
+    firstruncert = True
+    firstrunbrowser = True
+    firstrunfile = True
+    firstrunhash = True
+
     async def get_accounts(session):
         logger.info("Getting accounts data")
         params = (
@@ -1319,11 +1328,12 @@ def export_exclusions():
                         url = None
 
     async def exceptions_to_csv(querytype, session, scope, exparam):
-        firstrunpath = True
-        firstruncert = True
-        firstrunbrowser = True
-        firstrunfile = True
-        firstrunhash = True
+        nonlocal firstrunpath
+        nonlocal firstruncert
+        nonlocal firstrunbrowser
+        nonlocal firstrunfile
+        nonlocal firstrunhash
+
         logger.debug("Getting exceptions and writing to CSV")
         params = f"/web/api/{API_VERSION}/exclusions?{QUERY_LIMITS}&type={querytype}&countOnly=false"
         url = HOSTNAME.get() + params + exparam
@@ -1758,8 +1768,8 @@ def export_exclusions():
                 for r, row in enumerate(reader):
                     for c, col in enumerate(row):
                         worksheet.write(r, c, col)
-        if os.path.exists(csvfile):
-            os.remove(csvfile)
+        # if os.path.exists(csvfile):
+        #     os.remove(csvfile)
     workbook.close()
     logger.info("Done! Created the file %s\n", xlsx_filename)
 
@@ -2009,19 +2019,36 @@ def export_local_config():
                 continue
             else:
                 r = response.json()
-                agent_config = r["data"]["configuration"]
+                agent_config = r["data"]  # TODO TEST
                 logger.info(
                     "Successfully retrieved local config for Agent ID: %s", agent_id
                 )
 
-            formatted_data = json.loads(agent_config)
-            with open(json_file, "a+", encoding="utf-8") as f:
-                logger.info("Writing local config for %s to %s", agent_id, json_file)
-                f.write(f"\n{agent_id} - {row[0]}:\n")
-                json.dump(formatted_data, f, indent=4)
-                f.write("\n")
+            try:
+                if isinstance(agent_config, dict):
+                    with open(json_file, "a+", encoding="utf-8") as f:
+                        logger.info(
+                            "Writing local config for %s to %s", agent_id, json_file
+                        )
+                        f.write(f"\n{agent_id} - {row[0]}:\n")
+                        json.dump(agent_config, f, indent=4)
+                        f.write("\n")
+                    logger.info("Done! Output file is - %s\n", json_file)
+                else:
+                    formatted_data = json.loads(agent_config)
+                    with open(json_file, "a+", encoding="utf-8") as f:
+                        logger.info(
+                            "Writing local config for %s to %s", agent_id, json_file
+                        )
+                        f.write(f"\n{agent_id} - {row[0]}:\n")
+                        json.dump(formatted_data, f, indent=4)
+                        f.write("\n")
 
-    logger.info("Done! Output file is - %s\n", json_file)
+                    logger.info("Done! Output file is - %s\n", json_file)
+            except TypeError as e:
+                logger.error("Failed to convert retrieved data: %s", e)
+
+        logger.info("Done!")
 
 
 def export_users():
@@ -2940,6 +2967,11 @@ def export_blacklist():
     logger = logging.getLogger()
     logger.addHandler(text_handler)
 
+    datestamp = datetime.datetime.now().strftime("%Y-%m-%d")
+    xlsx_filename = f"Blacklist_Export_{datestamp}.xlsx"
+    csv_filename = f"Blacklist_Export_{datestamp}.csv"
+    firstrun = True
+
     async def get_accounts(session):
         logger.info("Getting accounts data")
         params = (
@@ -3057,7 +3089,8 @@ def export_blacklist():
                         url = None
 
     async def blacklist_to_csv(querytype, session, scope, exparam):
-        firstrun = True
+        nonlocal firstrun
+
         logger.debug("Getting blacklist and writing to CSV")
         params = f"/web/api/{API_VERSION}/restrictions?{QUERY_LIMITS}&type={querytype}&countOnly=false"
         url = HOSTNAME.get() + params + exparam
@@ -3086,14 +3119,14 @@ def export_blacklist():
                         for data in data:
                             csv_file = csv.writer(
                                 open(
-                                    "blacklist.csv",
+                                    csv_filename,
                                     "a+",
                                     newline="",
                                     encoding="utf-8",
                                 )
                             )
                             if firstrun:
-                                # FIXME Need to explicitly write all column headers, not all are present in all JSON responses.
+                                # FIXME Find solution to prevent headers being written on each scope iteration
                                 tmp = []
                                 tmp.append("Scope")
                                 for key, value in data.items():
@@ -3261,11 +3294,9 @@ def export_blacklist():
 
     logger.info("Creating XLSX...")
 
-    datestamp = datetime.datetime.now().strftime("%Y-%m-%d_%f")
-    xlsx_filename = f"Blacklist_Export_{datestamp}.xlsx"
     workbook = Workbook(xlsx_filename)
     csvs = [
-        "blacklist.csv",
+        csv_filename,
     ]
     for csvfile in csvs:
         logger.debug("Writing XLSX: %s", csvfile)
@@ -3276,8 +3307,8 @@ def export_blacklist():
                 for r, row in enumerate(reader):
                     for c, col in enumerate(row):
                         worksheet.write(r, c, col)
-        if os.path.exists(csvfile):
-            os.remove(csvfile)
+        # if os.path.exists(csvfile):
+        #     os.remove(csvfile)
     workbook.close()
     logger.info("Done! Created the file %s\n", xlsx_filename)
 
@@ -3315,9 +3346,19 @@ def import_blacklist():
         for row in csv_reader:
 
             value = row[0].strip()
+            # Extremely basic check to ensure the sha1 is at least the correct char length
+            if len(value) != 40:
+                logger.error(
+                    "Hash value: %s on row : %s is not a valid SHA1. Please validate the value is a valid SHA1 (40 characters).",
+                    value,
+                    row,
+                )
+                continue
             os_type = row[1]  # linux, macos, windows, windows_legacy
             description = row[2] or ""
-            logger.info("Creating Blacklist entry: %s - %s - %s", value, os_type, description)
+            logger.info(
+                "Creating Blacklist entry: %s - %s - %s", value, os_type, description
+            )
             # if row[2]:
             #     description = row[2]
             # else:
