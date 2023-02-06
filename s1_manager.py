@@ -1076,7 +1076,7 @@ def export_all_agents():
     logger.debug("Closing XLSX")
     workbook.close()
 
-    logger.info("Done! Output file is - %s.%s\n", output_file_name)
+    logger.info("Done! Output file is - %s.\n", output_file_name)
 
 
 def decommission_agents():
