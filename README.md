@@ -14,11 +14,7 @@ The S1 Manager tool is a GUI-based application to assist SentinelOne administrat
 
 > Important: This tool is provided "As Is" and comes with no warranty, guarantee, or support. Use of this tool assumes the user has an active license to use the SentinelOne product and has reviewed the code to understand what actions the tool is performing.
 
-<div align="center">
-
-[Report a Bug or Make a Feature Request][issues-url]
-
-</div>
+> As much of the functionality has been made available in the management console itself, this tool is not really maintained anymore.
 
 <br />
 
@@ -470,9 +466,9 @@ The s1_manager tool should be run through the Python Black code formatter. Refer
 
 
 <!-- ISSUES -->
-## Reporting Issues
+## Debug logging
 
-If you observe any issues using the S1 Manager tool, please check if this issue is already documented by checking the [issues][issues-url] page. If not, then fill out a new issue providing as much detail as possible including any inputs, observed behavior/errors in the UI, etc. Additionally, if you launch the S1 Manager tool with `--debug` argument, verbose logging is generated which may assist in troubleshooting. If you can easily replicate the issue please do so with debug logging enabled and provide the log file.  
+If you launch the S1 Manager tool with `--debug` argument, verbose logging is generated which may assist in troubleshooting. If you can easily replicate the issue please do so with debug logging enabled and provide the log file.  
 > **Important Note:** The debug logging is quite verbose and can include tens of thousands of lines. Additionally, your API Token will be displayed in plaintext so this should not be used except for troubleshooting. When done, the **s1_manager_debug** log should be properly purged from your file system.
 
 ```sh
